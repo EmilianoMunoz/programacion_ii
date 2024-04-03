@@ -17,6 +17,8 @@ El sistema permitirá a los profesionales y administradores modificar los datos 
 
 Desde la perspectiva del paciente, se podrá acceder al calendario mediante un inicio de sesión para reservar un turno en un horario específico dentro de los próximos 15 días. Además, se enviará una confirmación de cita al momento de reservar, como así también un recordatorio por correo electrónico o WhatsApp 24 horas antes del turno programado para recordar al paciente su cita.    
 
+El profesional deberá poder modificar los horarios distinguiendo entre días específicos o modificaciones permanentes en cierto día de la semana.    
+
 El sistema también permitirá que el paciente se registre en una lista de espera, organizada por día, para recibir notificaciones sobre la disponibilidad de turnos en caso de cancelaciones o modificaciones por parte de otros pacientes.    
 
 En caso de que el paciente necesite cancelar su turno hasta 48 horas antes, podrá hacerlo a través de la aplicación, liberando el turno para que otro usuario pueda reservarlo.    
