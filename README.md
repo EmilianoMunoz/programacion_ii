@@ -36,7 +36,7 @@ El proyecto de Gestión de Turnos online está dirigido principalmente a profesi
    - Confirmación inmediata de cita y recordatorio 24 horas antes por correo electrónico o WhatsApp.
 
 2. **Lista de Espera:**
-   - Opción para registrarse en una lista de espera y recibir notificaciones sobre disponibilidad de turnos.
+   - Opción para registrarse en una lista de espera y recibir notificaciones sobre disponibilidad de turnos de un día en específico en caso de que no hayan turnos disponibles para ese día.
 
 3. **Cancelaciones de Turnos:**
    - Los pacientes podrán cancelar turnos hasta 48 horas antes, liberando el turno para otros usuarios.
