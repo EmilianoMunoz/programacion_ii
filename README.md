@@ -25,6 +25,10 @@ El proyecto de Gestión de Turnos online está dirigido principalmente a profesi
 4. **Modificación de Datos de Pacientes:**
    - Los profesionales y administradores podrán modificar y eliminar datos de pacientes.
 
+5. **Modificación de Horarios:**
+   - Opción para modificar horarios de manera específica o permanente en días de la semana.
+
+
 ### Perspectiva del Paciente
 
 1. **Reserva de Turnos:**
@@ -39,10 +43,7 @@ El proyecto de Gestión de Turnos online está dirigido principalmente a profesi
 
 ### Funcionalidades Adicionales
 
-1. **Modificación de Horarios:**
-   - Opción para modificar horarios de manera específica o permanente en días de la semana.
-
-2. **Historial Completo:**
+1. **Historial Completo:**
    - Registro detallado de todas las modificaciones y altas de turnos realizadas, incluyendo la identificación de quién realizó la acción.
 
 
