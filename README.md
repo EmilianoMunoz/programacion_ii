@@ -1,9 +1,24 @@
-Repositorio correspondiente a la materia Programación II.  
-  
+
+Repositorio correspondiente a la materia Programación II.    
+
 Alumno: Emiliano Muñoz.  
-Proyecto: Gestión de pacientes enfocados en nutrición.  
-  
+Proyecto: Gestión de turnos online.  
+
 Descripción:  
-El sistema de gestión de pacientes enfocado en el uso por parte de profesionales de la nutrición deberá poder brindar un método de gestión de pacientes, tales como asignar turnos, poder visualizar un calendario con turnos disponibles, segmentados en horarios dependiendo el día, la posibilidad de cancelar o modificar un turno notificando al paciente sobre estos cambios mediante mail o whatsapp. Además, el sistema debe brindar la posibilidad al profesional de poder cargar los parametros del paciente tales como edad, peso, IMC, etc.  
-El sistema deberá también permitir al nutricionista cargar diferentes recetas, que queden a disposición de los pacientes, como así también, debe permitir gestionar altas bajas y modificaciones de pacientes al administrador, en este caso, al profesional. Como adicional, se desea que el sistema implemente un método de gráficos para poder visualizar el avance en el tiempo del paciente como así también sus parámetros y variables.  
-Desde el punto de vista de paciente, el usuario debe poder acceder, mediante login, al sistema para poder visualizar el siguiente turno que se le ha sido asignado, método de contacto al nutricionista en caso de necesitar cancelar o modificar el turno. Además el paciente debe poder ver su progreso, el cambio de las diversas variables a lo largo del tiempo. También se desea que el paciente pueda leer las recetas subidas por el profesional.
+El proyecto de Gestión de Turnos online está dirigido principalmente a profesionales de la salud que buscan asignar turnos de manera eficiente a través de una aplicación en línea.    
+
+El sistema permitirá a los profesionales de la salud gestionar los turnos, tanto altas, bajas como modificaciones. En caso de cambios repentinos en los turnos, se notificará al paciente mediante correo electrónico o WhatsApp para evitar confusiones.    
+
+Los profesionales tendrán acceso al calendario para modificar los horarios disponibles y visualizar los datos de los pacientes que reservaron turno, incluyendo nombre, apellido, teléfono, dirección, edad, obra social, entre otros.    
+
+Es deseable que el médico reciba una lista con todos los pacientes y horarios para su jornada, ya sea por correo electrónico o dentro de la aplicación. Además, se desea implementar notificaciones para informar al profesional cuando un paciente reserve, modifique o cancele un turno.    
+
+El sistema permitirá a los profesionales y administradores modificar los datos de los pacientes, realizar cambios y eliminar pacientes que ya no asistan a consultas.    
+
+Desde la perspectiva del paciente, se podrá acceder al calendario mediante un inicio de sesión para reservar un turno en un horario específico dentro de los próximos 15 días. Además, se enviará una confirmación de cita al momento de reservar, como así también un recordatorio por correo electrónico o WhatsApp 24 horas antes del turno programado para recordar al paciente su cita.    
+
+El sistema también permitirá que el paciente se registre en una lista de espera, organizada por día, para recibir notificaciones sobre la disponibilidad de turnos en caso de cancelaciones o modificaciones por parte de otros pacientes.    
+
+En caso de que el paciente necesite cancelar su turno hasta 48 horas antes, podrá hacerlo a través de la aplicación, liberando el turno para que otro usuario pueda reservarlo.    
+
+Por último, se implementará un historial completo que permitirá a los profesionales acceder a todas las modificaciones y altas de turnos realizadas, incluyendo quién realizó la acción, ya sea el paciente o el profesional.    
