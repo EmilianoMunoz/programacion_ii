@@ -1,101 +1,97 @@
-// components/carduser.tsx
-
-import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from '@/hooks/useColorScheme';
-
 
 interface UserInfoProps {
   name: string;
   surname: string;
-  healthInsurance: string;
+  coverage: string;
   email: string;
   password: string;
   phone: string;
-  onEdit?: (field: string) => void;
+  dob: string;
 }
 
-const UserInfo: React.FC<UserInfoProps> = ({
-  name,
-  surname,
-  healthInsurance,
-  email,
-  password,
-  phone,
-  onEdit,
-}) => {
+const UserInfo: React.FC = () => {
   const colorScheme = useColorScheme();
-  const maskedPassword = '*'.repeat(password.length);
+  const [userData, setUserData] = useState<UserInfoProps | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [userId, setUserId] = useState<number | null>(null);
 
-  const styles = StyleSheet.create({
-    container: {
-      width: '100%',
-      padding: 20,
-      backgroundColor: colorScheme === 'dark' ? '#333' : 'white',
-      borderRadius: 10,
-      shadowColor: colorScheme === 'dark' ? '#000' : '#aaa',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 5,
-    },
-    headerContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    name: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      marginLeft: 20,
-      color: colorScheme === 'dark' ? '#fff' : '#000',
-    },
-    detailsContainer: {
-      marginTop: 10,
-    },
-    detailRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-    },
-    label: {
-      fontWeight: 'bold',
-      fontSize: 16,
-      color: colorScheme === 'dark' ? '#aaa' : '#555',
-    },
-    detail: {
-      fontSize: 16,
-      color: colorScheme === 'dark' ? '#fff' : '#333',
-    },
-  });
+  const fetchUserIdFromStorage = async () => {
+    try {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      if (storedUserId) {
+        setUserId(parseInt(storedUserId, 10));
+      } else {
+        console.error('No se encontró el userId en AsyncStorage');
+      }
+    } catch (error) {
+      console.error('Error al obtener el userId desde AsyncStorage:', error);
+    }
+  };
+
+  const fetchUserData = async (id: number) => {
+    try {
+      const response = await axios.get(`http://192.168.18.166:8080/users/${id}`, {
+        timeout: 5000,
+      });
+      setUserData(response.data);
+    } catch (error) {
+      console.error('Error al obtener los datos del usuario:');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchUserIdFromStorage();
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (userId !== null) {
+      fetchUserData(userId);
+    }
+  }, [userId]);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="indigo" />;
+  }
+
+  if (!userData) {
+    return <Text>No se encontraron datos del usuario.</Text>;
+  }
+
+  const textColor = colorScheme === 'dark' ? 'white' : 'black';
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Ionicons name="person-circle" size={100} color={colorScheme === 'dark' ? '#fff' : 'indigo'} />
-        <Text style={styles.name}>{name} {surname}</Text>
-      </View>
-      <View style={styles.detailsContainer}>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>Email:</Text>
-          <Text style={styles.detail}>{email}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>Teléfono:</Text>
-          <Text style={styles.detail}>{phone}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>Obra Social:</Text>
-          <Text style={styles.detail}>{healthInsurance}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>Contraseña:</Text>
-          <Text style={styles.detail}>{maskedPassword}</Text>
-        </View>
-      </View>
+      <Ionicons name="person-circle-outline" size={100} color={textColor} />
+      <Text style={[styles.text, { color: textColor }]}>{`${userData.name} ${userData.surname}`}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{userData.email}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{userData.phone}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{userData.coverage}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{userData.dob}</Text>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  text: {
+    fontSize: 18,
+    marginVertical: 5,
+  },
+});
 
 export default UserInfo;

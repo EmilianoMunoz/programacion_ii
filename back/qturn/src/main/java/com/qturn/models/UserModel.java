@@ -1,21 +1,16 @@
 package com.qturn.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.util.Date;
 
 @Entity
 @Table(name = "users")
-
 public class UserModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = false)
     private String name;
 
@@ -27,15 +22,20 @@ public class UserModel {
 
     @Column(nullable = false)
     private String password;
-    
+
     @Column(unique = true, nullable = false)
     private String phone;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String coverage;
 
-    @Column(nullable = false)
-    private String role;
+    @ManyToOne
+    @JoinColumn(name = "role_id", nullable = false)
+    private RoleModel role;
+
+    @Column(nullable = true)
+    @Temporal(TemporalType.DATE)
+    private Date dob; 
 
     public Long getId() {
         return id;
@@ -93,14 +93,20 @@ public class UserModel {
         this.coverage = coverage;
     }
 
-    public String getRole() {
+    public RoleModel getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(RoleModel role) {
         this.role = role;
     }
 
-    
+    public Date getDob() {
+        return dob;
+    }
+
+    public void setDob(Date dob) {
+        this.dob = dob;
+    }
 
 }

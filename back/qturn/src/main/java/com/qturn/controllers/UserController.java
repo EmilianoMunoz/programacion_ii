@@ -16,11 +16,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-
 import com.qturn.models.UserModel;
 import com.qturn.services.UserService;
 
-import java.util.ArrayList;
 import java.util.Optional;
 
 @RestController
@@ -38,18 +36,29 @@ public class UserController {
     }
 
     @PostMapping
-    public UserModel saveUser(@RequestBody UserModel user) {
-        return this.userService.saveUser(user);
+    public ResponseEntity<?> create(@RequestBody UserModel user) {
+        try {
+            UserModel newUser = this.userService.create(user);
+            return ResponseEntity.ok(newUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping(path = "/{id}")
-    public Optional<UserModel> getUserById(@PathVariable Long id) {
-        return this.userService.findById(id);
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Optional<UserModel> user = this.userService.findById(id);
+        return user.isPresent() ? ResponseEntity.ok(user.get()) : ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
     }
 
     @PutMapping(path = "/{id}")
-    public UserModel update(@RequestBody UserModel request, @PathVariable("id") Long id) {
-        return this.userService.update(request, id);
+    public ResponseEntity<?> update(@RequestBody UserModel request, @PathVariable("id") Long id) {
+        try {
+            UserModel updatedUser = this.userService.update(request, id);
+            return ResponseEntity.ok(updatedUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping(path = "/{id}")

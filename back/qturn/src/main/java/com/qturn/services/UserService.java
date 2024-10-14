@@ -1,6 +1,5 @@
 package com.qturn.services;
 
-import java.util.ArrayList;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.qturn.models.UserModel;
+import com.qturn.models.RoleModel;
 import com.qturn.repositories.IUserRepository;
 
 @Service
@@ -18,16 +18,26 @@ public class UserService {
     @Autowired
     IUserRepository userRepository;
 
+    @Autowired
+    private RoleService roleService;
+
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public Page<UserModel> getUsers(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
 
-    public UserModel saveUser(UserModel user) {
+    public UserModel create(UserModel user) {
+        RoleModel role = roleService.getRoleById(user.getRole().getId());
+        user.setRole(role);
+    
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
-        
+    
+        if (role.getId() == 3 && user.getDob() == null) {
+            throw new IllegalArgumentException("Patients must have a birthdate.");
+        }
+    
         return userRepository.save(user);
     }
 
@@ -39,18 +49,17 @@ public class UserService {
         Optional<UserModel> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             UserModel user = optionalUser.get();
+    
             user.setName(request.getName());
             user.setSurname(request.getSurname());
             user.setEmail(request.getEmail());
             user.setPhone(request.getPhone());
-            user.setCoverage(request.getCoverage());
-            user.setRole(request.getRole());
-
-            if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-                String hashedPassword = passwordEncoder.encode(request.getPassword());
-                user.setPassword(hashedPassword);
+    
+            if (request.getCoverage() != null) {
+                user.setCoverage(request.getCoverage());
             }
-            
+    
+
             return userRepository.save(user);
         } else {
             throw new RuntimeException("User not found");

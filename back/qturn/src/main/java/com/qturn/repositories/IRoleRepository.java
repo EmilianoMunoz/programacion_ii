@@ -3,12 +3,10 @@ package com.qturn.repositories;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.qturn.models.UserModel;
+import com.qturn.models.RoleModel;
 
 @Repository
 
-public interface IUserRepository extends JpaRepository<UserModel, Long> {
+public interface IRoleRepository extends JpaRepository<RoleModel, Long> {
 
-    UserModel findByEmail(String email);
-    
 }

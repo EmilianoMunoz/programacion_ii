@@ -1,18 +1,39 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Link } from 'expo-router';
-import { useRouter } from 'expo-router';
-
+import { Link, useRouter } from 'expo-router';
+import { useAuth } from '@/authcontext';
 
 const Settings: React.FC = () => {
   const backgroundColor = useThemeColor({}, 'background');
   const itemColor = useThemeColor({}, 'text');
   const logoutButtonColor = useThemeColor({}, 'tint');
+  const { logout } = useAuth();
   const router = useRouter();
 
-  const handleLogout = () => {
-    router.push('/');
+  const handleLogout = async () => {
+    Alert.alert(
+      'Cerrar sesión',
+      '¿Estás seguro que deseas cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Sí, cerrar sesión',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              router.replace('/');
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo cerrar la sesión. Por favor, intenta de nuevo.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -26,7 +47,6 @@ const Settings: React.FC = () => {
         <TouchableOpacity style={[styles.item, { borderColor: itemColor }]}>
           <Text style={[styles.itemText, { color: itemColor }]}>Notificaciones</Text>
         </TouchableOpacity>
-        
         <TouchableOpacity style={[styles.item, { borderColor: itemColor }]}>
           <Text style={[styles.itemText, { color: itemColor }]}>Privacidad</Text>
         </TouchableOpacity>
@@ -69,6 +89,7 @@ const styles = StyleSheet.create({
   },
   logoutButtonText: {
     color: '#fff',
+    fontWeight: '500',
   },
 });
 
