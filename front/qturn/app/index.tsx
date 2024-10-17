@@ -48,10 +48,8 @@ const Index: React.FC<IndexProps> = ({ onLogin }) => {
       if (response.status === 200 && response.data) {
         console.log('Login exitoso');
         
-        // Obtener el userId y otros datos del usuario de la respuesta
-        const { userId, name, surname, email, phone, healthInsurance } = response.data;
+        const { userId, name, surname, email, phone, coverage } = response.data;
         
-        // Guardar userId en AsyncStorage o en estado global
         await AsyncStorage.setItem('userId', userId.toString());
   
         if (onLogin) {

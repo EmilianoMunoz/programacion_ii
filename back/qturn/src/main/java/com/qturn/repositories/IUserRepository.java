@@ -1,14 +1,12 @@
 package com.qturn.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.qturn.models.UserModel;
 
-@Repository
+import java.util.Optional;
 
 public interface IUserRepository extends JpaRepository<UserModel, Long> {
 
-    UserModel findByEmail(String email);
-    
+    Optional<UserModel> findByEmail(String email);
 }
