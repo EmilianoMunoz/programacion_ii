@@ -4,19 +4,18 @@ import axios from 'axios';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { router } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '@/authcontext';
 
 const windowWidth = Dimensions.get('window').width;
 
-interface IndexProps {
-  onLogin?: () => void;
-}
-
-const Index: React.FC<IndexProps> = ({ onLogin }) => {
+const Index: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const { login } = useAuth();
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -33,7 +32,7 @@ const Index: React.FC<IndexProps> = ({ onLogin }) => {
   
     setIsLoading(true);
     try {
-      const response = await axios.post('http://192.168.18.166:8080/auth/login', 
+      const response = await axios.post('http://192.168.18.166:8080/login', 
         {
           email,
           password,
@@ -47,17 +46,26 @@ const Index: React.FC<IndexProps> = ({ onLogin }) => {
   
       if (response.status === 200 && response.data) {
         console.log('Login exitoso');
-        
-        const { userId, name, surname, email, phone, coverage } = response.data;
-        
-        await AsyncStorage.setItem('userId', userId.toString());
-  
-        if (onLogin) {
-          await onLogin();
-        } else {
+      
+        const { token, id, name, surname, email, role } = response.data;
+      
+        await SecureStore.setItemAsync('token', token);
+        await SecureStore.setItemAsync('userId', id.toString());
+        await SecureStore.setItemAsync('name', name);
+        await SecureStore.setItemAsync('surname', surname);
+        await SecureStore.setItemAsync('email', email);
+        await SecureStore.setItemAsync('role', role);
+      
+        await login({ id, name, email, role });
+      
+        if (role === 'PATIENT') {
           router.replace('/(tabs)/home');
+        } else if (role === 'ADMIN' || role === 'DOCTOR') {
+          router.replace('/(tabs)/dashboard');
+        } else {
+          console.error('Rol de usuario no reconocido:', role);
+          Alert.alert('Error', 'Rol de usuario no reconocido');
         }
-        
       } else {
         Alert.alert('Error', 'Respuesta inesperada del servidor');
       }
@@ -81,6 +89,19 @@ const Index: React.FC<IndexProps> = ({ onLogin }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Nueva función para manejar el inicio de sesión como admin
+  const handleLoginAsAdmin = async () => {
+    setEmail('emiliano@example.com'); // Establece el email del admin
+    setPassword('2205'); // Establece la contraseña del admin
+    await handleLogin(); // Llama a la función de login
+  };
+  // Nueva función para manejar el inicio de sesión como admin
+  const handleLoginAsPatient = async () => {
+    setEmail('celina@example.com'); // Establece el email del admin
+    setPassword('2205'); // Establece la contraseña del admin
+    await handleLogin(); // Llama a la función de login
   };
 
   return (
@@ -126,11 +147,36 @@ const Index: React.FC<IndexProps> = ({ onLogin }) => {
           styles.buttonSession, 
           { backgroundColor: pressed ? 'darkblue' : buttonColor }
         ]} 
-        onPress={handleLogin}
+        onPress={handleLogin} // Maneja el inicio de sesión con credenciales ingresadas
         disabled={isLoading}
       >
         <Text style={[styles.buttonText, { color: 'white' }]}>
           {isLoading ? 'Iniciando sesión...' : 'Ingresar'}
+        </Text>
+      </Pressable>
+      
+      {/* Botón para iniciar sesión como admin para pruebas */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.buttonSession,
+          { backgroundColor: pressed ? 'darkblue' : buttonColor },
+        ]}
+        onPress={handleLoginAsAdmin} // Llama a la nueva función
+      >
+        <Text style={[styles.buttonText, { color: 'white' }]}>
+          Iniciar sesión como admin
+        </Text>
+      </Pressable>
+      {/* Botón para iniciar sesión como admin para pruebas */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.buttonSession,
+          { backgroundColor: pressed ? 'darkblue' : buttonColor },
+        ]}
+        onPress={handleLoginAsPatient} // Llama a la nueva función
+      >
+        <Text style={[styles.buttonText, { color: 'white' }]}>
+          Iniciar sesión como paciente
         </Text>
       </Pressable>
     </ScrollView>

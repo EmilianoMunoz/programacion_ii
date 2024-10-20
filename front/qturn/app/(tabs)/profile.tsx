@@ -3,18 +3,30 @@ import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator,
 import UserInfo from '../../components/carduser';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { useRouter } from 'expo-router'; // Importa useRouter
+
+interface UserInfoProps {
+  name: string;
+  surname: string;
+  coverage: string;
+  email: string;
+  phone: string;
+  dob: string;
+}
 
 const Profile: React.FC = () => {
   const backgroundColor = useThemeColor({}, 'background');
   const buttonColor = useThemeColor({}, 'tint');
+  const router = useRouter(); // Inicializa el router
 
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserInfoProps | null>(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userId = await AsyncStorage.getItem('userId');
+        const userId = await SecureStore.getItemAsync('userId');
         const response = await axios.get(`http://192.168.18.166:8080/users/${userId}`);
         setUserData(response.data);
       } catch (error) {
@@ -28,7 +40,6 @@ const Profile: React.FC = () => {
     fetchUserData();
   }, []);
 
-  
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -44,17 +55,21 @@ const Profile: React.FC = () => {
         <UserInfo 
           name={userData.name} 
           surname={userData.surname} 
-          coverage={userData.coverage || "No posee"}
+          coverage={userData.coverage || "No Aplica"}
           email={userData.email}
-          password={userData.password}
           phone={userData.phone} 
+          dob={userData.dob}
         />
       ) : (
         <Text>No se encontraron datos de usuario.</Text>
       )}
       <TouchableOpacity 
         style={[styles.button, { backgroundColor: buttonColor }]}
-        onPress={() => console.log('Modificar datos presionado')}
+        onPress={async () => {
+          const userId = await SecureStore.getItemAsync('userId');
+          // Navega a EditUserScreen pasando el ID del usuario
+          router.push(`/screens/editUser?id=${userId}`); 
+        }}
       >
         <Text style={styles.buttonText}>Modificar datos</Text>
       </TouchableOpacity>

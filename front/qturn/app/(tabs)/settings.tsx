@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Link, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';  // Importar SecureStore
 import { useAuth } from '@/authcontext';
 
 const Settings: React.FC = () => {
@@ -25,8 +26,27 @@ const Settings: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              await SecureStore.deleteItemAsync('token');
+              await SecureStore.deleteItemAsync('userId');
+              await SecureStore.deleteItemAsync('name');
+              await SecureStore.deleteItemAsync('surname');
+              await SecureStore.deleteItemAsync('email');
+              await SecureStore.deleteItemAsync('role');
+
               await logout();
-              router.replace('/');
+
+              Alert.alert(
+                'Sesión cerrada',
+                'Has cerrado sesión exitosamente.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      router.replace('/');
+                    }
+                  }
+                ]
+              );
             } catch (error) {
               Alert.alert('Error', 'No se pudo cerrar la sesión. Por favor, intenta de nuevo.');
             }

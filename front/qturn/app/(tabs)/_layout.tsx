@@ -3,9 +3,11 @@ import React from 'react';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
+import { useAuth } from '@/authcontext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { user } = useAuth();
 
   return (
     <Tabs
@@ -52,6 +54,20 @@ export default function TabLayout() {
               focused={focused}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Dashboard',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? 'bar-chart' : 'bar-chart-outline'}
+              color={color}
+              focused={focused}
+            />
+          ),
+          href: user?.role === 'ADMIN' ? '/dashboard' : null,
         }}
       />
     </Tabs>

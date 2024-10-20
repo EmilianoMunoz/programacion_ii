@@ -1,7 +1,5 @@
 package com.qturn.dto;
 
-import com.qturn.enums.Role;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,17 +9,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+public class UserUpdateDto {
 
-public class UserDto {
-
-    private Long id;
     private String name;
     private String surname;
     private String email;
     private String phone;
     private String dob;
     private String coverage;
-    private String token;
-    private Role role;
 
 }
