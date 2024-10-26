@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '@/authcontext'; 
 import * as SecureStore from 'expo-secure-store';
 import UserList from '@/components/userlist';
-import { useNavigation } from 'expo-router';
+import { useNavigation, router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 const PatientList: React.FC = () => {
@@ -55,6 +55,10 @@ const PatientList: React.FC = () => {
     fetchUsers();
   }, []);
 
+  const handleNavigateToCreateUser = () => {
+    router.push('/screens/createUser');
+  };
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor }]}>
@@ -66,7 +70,7 @@ const PatientList: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <UserList users={users} />
-      <TouchableOpacity style={[styles.item, { marginTop: 16 }]}>
+      <TouchableOpacity style={[styles.item, { marginTop: 16 }]} onPress={handleNavigateToCreateUser}>
         <Text style={[styles.itemText, { color: 'white' }]}>Nuevo Usuario</Text>
       </TouchableOpacity>
     </View>
@@ -78,7 +82,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     justifyContent: 'flex-start',
-    flexDirection: 'column', // Asegurarse de que los elementos se alineen en columna
+    flexDirection: 'column',
   },
   loadingContainer: {
     flex: 1,

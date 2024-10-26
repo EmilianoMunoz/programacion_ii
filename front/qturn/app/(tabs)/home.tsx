@@ -1,18 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, useWindowDimensions, Image } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useRouter } from 'expo-router';
 
 const HomeScreen: React.FC = () => {
   const { width } = useWindowDimensions();
   const backgroundColor = useThemeColor({}, 'background');
   const buttonColor = useThemeColor({}, 'tint');
   const textColor = useThemeColor({}, 'text');
+  const router = useRouter();
 
   const buttons = [
-    { title: 'Solicitar Turno', onPress: () => console.log('Solicitar turno presionado') },
-    { title: 'Modificar Turno', onPress: () => console.log('Modificar turno presionado') },
-    { title: 'Ver Próximo Turno', onPress: () => console.log('Ver próximo turno presionado') },
-    { title: 'Cancelar Turno', onPress: () => console.log('Cancelar turno presionado') },
+    { title: 'Solicitar Turno', onPress: () => router.push('/screens/newAppointment') },
+    { title: 'Modificar Turno', onPress: () => router.push('/screens/viewAppointment') },
+    { title: 'Ver Próximo Turno', onPress: () => router.push('/screens/viewAppointment') },
+    { title: 'Cancelar Turno', onPress: () => router.push('/screens/deleteAppointment') },
   ];
 
   const buttonSize = Math.min((width - 60) / 2, 150);
@@ -34,15 +36,16 @@ const HomeScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.button,
               { backgroundColor: buttonColor, width: buttonSize, height: buttonSize },
-              pressed && styles.buttonPressed
+              pressed ? styles.buttonPressed : null // Uso correcto de pressed
             ]}
             onPress={button.onPress}
+            accessibilityLabel={button.title}
           >
-            {({ pressed }) => (
+            {({ pressed }) => ( // Usamos el objeto pressed aquí
               <Text style={[
                 styles.buttonText,
                 { color: 'white' },
-                pressed && styles.buttonTextPressed
+                pressed && styles.buttonTextPressed // Estilo si está presionado
               ]}>
                 {button.title}
               </Text>

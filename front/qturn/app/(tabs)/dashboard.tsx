@@ -12,8 +12,8 @@ const Dashboard: React.FC = () => {
 
   // Botones relacionados con acciones de un dashboard
   const buttons = [
-    { title: 'Ver Reportes', onPress: () => console.log('Ver reportes presionado') },
-    { title: 'Administrar Usuarios', onPress: () => router.push('/screens/patientlist') }, // Redirige a patientlist
+    { title: 'Próximos Turnos', onPress: () => router.push('/screens/dailyAppointment') },
+    { title: 'Administrar Usuarios', onPress: () => router.push('/screens/patientlist') },
     { title: 'Ver Estadísticas', onPress: () => console.log('Ver estadísticas presionado') },
     { title: 'Configuración', onPress: () => console.log('Configuración presionada') },
   ];

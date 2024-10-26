@@ -67,7 +67,7 @@ export default function TabLayout() {
               focused={focused}
             />
           ),
-          href: user?.role === 'ADMIN' ? '/dashboard' : null,
+          href: (user?.role === 'ADMIN' || user?.role === 'DOCTOR') ? '/dashboard' : null,
         }}
       />
     </Tabs>

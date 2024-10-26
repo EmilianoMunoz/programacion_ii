@@ -1,185 +1,234 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, Text, Pressable, Image, ScrollView, Alert, Dimensions } from 'react-native';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  Text,
+  Pressable,
+  Image,
+  ScrollView,
+  Alert,
+  Dimensions,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import axios from 'axios';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { router } from 'expo-router';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/authcontext';
 
-const windowWidth = Dimensions.get('window').width;
+const { width: windowWidth } = Dimensions.get('window');
 
-const Index: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+const TEST_USERS = {
+  ADMIN: { email: 'emiliano@example.com', password: '2205' },
+  PATIENT: { email: 'celina@example.com', password: '2205' },
+  DOCTOR: { email: 'doc@example.com', password: '2205' },
+} as const;
+
+const LoginScreen: React.FC = () => {
+  const [credentials, setCredentials] = useState<LoginCredentials>({
+    email: '',
+    password: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { login } = useAuth();
 
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const inputBackgroundColor = useThemeColor({}, 'background');
-  const borderColor = useThemeColor({}, 'tint');
-  const buttonColor = useThemeColor({}, 'tint');
-  const iconColor = useThemeColor({}, 'text');
+  // Theme colors
+  const theme = {
+    background: useThemeColor({}, 'background'),
+    text: useThemeColor({}, 'text'),
+    tint: useThemeColor({}, 'tint'),
+    error: '#ff4444',
+    inputBackground: useThemeColor({}, 'background'),
+  };
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Por favor ingrese email y contraseña');
-      return;
+  const handleCredentialChange = (field: keyof LoginCredentials) => (value: string) => {
+    setCredentials(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateCredentials = (): boolean => {
+    if (!credentials.email || !credentials.password) {
+      Alert.alert('Error', 'Por favor complete todos los campos');
+      return false;
     }
-  
+    if (!credentials.email.includes('@')) {
+      Alert.alert('Error', 'Por favor ingrese un email válido');
+      return false;
+    }
+    return true;
+  };
+
+  const saveUserData = async (userData: any) => {
+    const { token, id, name, surname, email, role } = userData;
+    const items = {
+      token,
+      userId: id.toString(),
+      name,
+      surname,
+      email,
+      role,
+    };
+
+    await Promise.all(
+      Object.entries(items).map(([key, value]) => 
+        SecureStore.setItemAsync(key, value)
+      )
+    );
+  };
+
+  const handleNavigation = (role: string) => {
+    switch (role) {
+      case 'PATIENT':
+        router.replace('/(tabs)/home');
+        break;
+      case 'ADMIN':
+      case 'DOCTOR':
+        router.replace('/(tabs)/dashboard');
+        break;
+      default:
+        throw new Error(`Rol no reconocido: ${role}`);
+    }
+  };
+
+  const handleLogin = async (testCredentials?: LoginCredentials) => {
+    const loginData = testCredentials || credentials;
+    
+    if (!testCredentials && !validateCredentials()) return;
+
     setIsLoading(true);
     try {
-      const response = await axios.post('http://192.168.18.166:8080/login', 
+      const response = await axios.post(
+        'http://192.168.18.166:8080/login',
+        loginData,
         {
-          email,
-          password,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          }
+          headers: { 'Content-Type': 'application/json' },
         }
       );
-  
+
       if (response.status === 200 && response.data) {
-        console.log('Login exitoso');
-      
-        const { token, id, name, surname, email, role } = response.data;
-      
-        await SecureStore.setItemAsync('token', token);
-        await SecureStore.setItemAsync('userId', id.toString());
-        await SecureStore.setItemAsync('name', name);
-        await SecureStore.setItemAsync('surname', surname);
-        await SecureStore.setItemAsync('email', email);
-        await SecureStore.setItemAsync('role', role);
-      
-        await login({ id, name, email, role });
-      
-        if (role === 'PATIENT') {
-          router.replace('/(tabs)/home');
-        } else if (role === 'ADMIN' || role === 'DOCTOR') {
-          router.replace('/(tabs)/dashboard');
-        } else {
-          console.error('Rol de usuario no reconocido:', role);
-          Alert.alert('Error', 'Rol de usuario no reconocido');
-        }
-      } else {
-        Alert.alert('Error', 'Respuesta inesperada del servidor');
+        await saveUserData(response.data);
+        await login(response.data);
+        handleNavigation(response.data.role);
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log('Error de Axios:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers,
-          config: error.config
-        });
-  
-        Alert.alert(
-          'Error', 
-          `Error al iniciar sesión: ${error.response?.data?.message || error.message || 'Error desconocido'}`
-        );
-      } else {
-        console.log('Error no-Axios:', error);
-        Alert.alert('Error', 'Error inesperado al intentar iniciar sesión');
-      }
+      const errorMessage = axios.isAxiosError(error)
+        ? error.response?.data?.message || error.message
+        : 'Error inesperado al intentar iniciar sesión';
+      
+      Alert.alert('Error', errorMessage);
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Nueva función para manejar el inicio de sesión como admin
-  const handleLoginAsAdmin = async () => {
-    setEmail('emiliano@example.com'); // Establece el email del admin
-    setPassword('2205'); // Establece la contraseña del admin
-    await handleLogin(); // Llama a la función de login
-  };
-  // Nueva función para manejar el inicio de sesión como admin
-  const handleLoginAsPatient = async () => {
-    setEmail('celina@example.com'); // Establece el email del admin
-    setPassword('2205'); // Establece la contraseña del admin
-    await handleLogin(); // Llama a la función de login
-  };
+  const renderTestLoginButtons = () => (
+    <View style={styles.testButtonsContainer}>
+      {(Object.entries(TEST_USERS) as [keyof typeof TEST_USERS, LoginCredentials][]).map(
+        ([userType, credentials]) => (
+          <Pressable
+            key={userType}
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: pressed ? 'darkblue' : theme.tint },
+            ]}
+            onPress={() => handleLogin(credentials)}
+          >
+            <Text style={styles.buttonText}>
+              Iniciar como {userType.toLowerCase()}
+            </Text>
+          </Pressable>
+        )
+      )}
+    </View>
+  );
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor }]}>
-      <View style={styles.logoContainer}>
-        <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
-      </View>
-      <TextInput
-        style={[styles.input, { backgroundColor: inputBackgroundColor, borderColor, color: textColor }]} 
-        placeholder="Correo Electrónico"
-        placeholderTextColor={textColor}
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <View style={styles.passwordContainer}>
-        <View style={[styles.passwordInputContainer, { borderColor }]}>
-          <TextInput
-            style={[styles.passwordInput, { backgroundColor: inputBackgroundColor, color: textColor }]}
-            placeholder="Contraseña"
-            placeholderTextColor={textColor}
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            autoCapitalize="none"
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        contentContainerStyle={[styles.container, { backgroundColor: theme.background }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('@/assets/images/logo.png')}
+            style={styles.logo}
           />
-          <Pressable 
-            onPress={() => setShowPassword(prev => !prev)} 
-            style={styles.eyeButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        </View>
+
+        <View style={styles.formContainer}>
+          <View style={styles.inputWrapper}>
+            <Mail size={20} color={theme.text} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text }]}
+              placeholder="Correo Electrónico"
+              placeholderTextColor={theme.text}
+              value={credentials.email}
+              onChangeText={handleCredentialChange('email')}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              editable={!isLoading}
+            />
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <Lock size={20} color={theme.text} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text }]}
+              placeholder="Contraseña"
+              placeholderTextColor={theme.text}
+              secureTextEntry={!showPassword}
+              value={credentials.password}
+              onChangeText={handleCredentialChange('password')}
+              autoCapitalize="none"
+              editable={!isLoading}
+            />
+            <Pressable
+              onPress={() => setShowPassword(prev => !prev)}
+              style={styles.eyeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              {showPassword ? (
+                <EyeOff size={20} color={theme.text} />
+              ) : (
+                <Eye size={20} color={theme.text} />
+              )}
+            </Pressable>
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: pressed ? 'darkblue' : theme.tint },
+              isLoading && styles.buttonDisabled,
+            ]}
+            onPress={() => handleLogin()}
+            disabled={isLoading}
           >
-            {showPassword ? (
-              <EyeOff size={20} color={iconColor} />
+            {isLoading ? (
+              <ActivityIndicator color="white" />
             ) : (
-              <Eye size={20} color={iconColor} />
+              <Text style={styles.buttonText}>Ingresar</Text>
             )}
           </Pressable>
+
+          {renderTestLoginButtons()}
         </View>
-      </View>
-      <Pressable 
-        style={({ pressed }) => [
-          styles.buttonSession, 
-          { backgroundColor: pressed ? 'darkblue' : buttonColor }
-        ]} 
-        onPress={handleLogin} // Maneja el inicio de sesión con credenciales ingresadas
-        disabled={isLoading}
-      >
-        <Text style={[styles.buttonText, { color: 'white' }]}>
-          {isLoading ? 'Iniciando sesión...' : 'Ingresar'}
-        </Text>
-      </Pressable>
-      
-      {/* Botón para iniciar sesión como admin para pruebas */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.buttonSession,
-          { backgroundColor: pressed ? 'darkblue' : buttonColor },
-        ]}
-        onPress={handleLoginAsAdmin} // Llama a la nueva función
-      >
-        <Text style={[styles.buttonText, { color: 'white' }]}>
-          Iniciar sesión como admin
-        </Text>
-      </Pressable>
-      {/* Botón para iniciar sesión como admin para pruebas */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.buttonSession,
-          { backgroundColor: pressed ? 'darkblue' : buttonColor },
-        ]}
-        onPress={handleLoginAsPatient} // Llama a la nueva función
-      >
-        <Text style={[styles.buttonText, { color: 'white' }]}>
-          Iniciar sesión como paciente
-        </Text>
-      </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -187,58 +236,62 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: windowWidth * 0.1,
-    paddingTop: 20,
+    paddingVertical: 40,
   },
   logoContainer: {
-    marginBottom: 50,
     alignItems: 'center',
+    marginBottom: 40,
   },
   logo: {
     width: windowWidth * 0.4,
     height: windowWidth * 0.4,
     resizeMode: 'contain',
   },
-  input: {
+  formContainer: {
     width: '100%',
-    height: 50,
-    borderWidth: 1,
-    borderRadius: 15,
-    marginBottom: 15,
-    paddingHorizontal: 15,
+    gap: 16,
   },
-  passwordContainer: {
-    width: '100%',
-  },
-  passwordInputContainer: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
     borderRadius: 15,
-    height: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    height: 56,
+    paddingHorizontal: 16,
   },
-  passwordInput: {
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
     flex: 1,
     height: '100%',
-    paddingHorizontal: 15,
+    fontSize: 16,
   },
   eyeButton: {
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 8,
+    marginLeft: 8,
   },
-  buttonSession: {
+  button: {
     width: '100%',
-    paddingVertical: 15,
+    height: 56,
     borderRadius: 15,
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: 'white',
+  },
+  testButtonsContainer: {
+    marginTop: 24,
+    gap: 12,
   },
 });
 
-export default Index;
+export default LoginScreen;

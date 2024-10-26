@@ -4,7 +4,7 @@ import UserInfo from '../../components/carduser';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router'; // Importa useRouter
+import { useRouter } from 'expo-router';
 
 interface UserInfoProps {
   name: string;
@@ -18,7 +18,7 @@ interface UserInfoProps {
 const Profile: React.FC = () => {
   const backgroundColor = useThemeColor({}, 'background');
   const buttonColor = useThemeColor({}, 'tint');
-  const router = useRouter(); // Inicializa el router
+  const router = useRouter();
 
   const [userData, setUserData] = useState<UserInfoProps | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,9 +26,23 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        const token = await SecureStore.getItemAsync('token');
+        if (!token) throw new Error('No token found');
+
         const userId = await SecureStore.getItemAsync('userId');
-        const response = await axios.get(`http://192.168.18.166:8080/users/${userId}`);
-        setUserData(response.data);
+        if (!userId) throw new Error('No userId found');
+
+        const response = await axios.get(`http://192.168.18.166:8080/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 200) {
+          setUserData(response.data);
+        } else {
+          throw new Error('Error al obtener los datos del usuario');
+        }
       } catch (error) {
         console.error('Error al obtener los datos del usuario:', error);
         Alert.alert('Error', 'No se pudieron obtener los datos del usuario.');
@@ -67,8 +81,11 @@ const Profile: React.FC = () => {
         style={[styles.button, { backgroundColor: buttonColor }]}
         onPress={async () => {
           const userId = await SecureStore.getItemAsync('userId');
-          // Navega a EditUserScreen pasando el ID del usuario
-          router.push(`/screens/editUser?id=${userId}`); 
+          if (userId) {
+            router.push(`/screens/editUser?id=${userId}`); 
+          } else {
+            Alert.alert('Error', 'No se pudo obtener el ID del usuario');
+          }
         }}
       >
         <Text style={styles.buttonText}>Modificar datos</Text>

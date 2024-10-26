@@ -1,15 +1,42 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 const UserList: React.FC<{ users: any[] }> = ({ users }) => {
-
-
   const router = useRouter();
+
   const handleEditUser = (userId: number) => {
     console.log(`Modificar usuario con ID: ${userId}`);
     router.push(`/screens/editUser?id=${userId}`);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    const token = await SecureStore.getItemAsync('token');
+    Alert.alert(
+      'Eliminar Usuario',
+      '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`http://192.168.18.166:8080/users/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              Alert.alert('Usuario eliminado', 'El usuario ha sido eliminado correctamente.');
+            } catch (error) {
+              console.error('Error al eliminar el usuario:', error);
+              Alert.alert('Error', 'No se pudo eliminar el usuario.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderItem = ({ item }: { item: any }) => (
@@ -20,6 +47,9 @@ const UserList: React.FC<{ users: any[] }> = ({ users }) => {
       </View>
       <TouchableOpacity onPress={() => handleEditUser(item.id)} style={styles.editButton}>
         <Ionicons name="pencil" size={24} color="#fff" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleDeleteUser(item.id)} style={styles.deleteButton}>
+        <Ionicons name="trash" size={24} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -64,6 +94,10 @@ const styles = StyleSheet.create({
   },
   editButton: {
     padding: 8,
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   listContainer: {
     flexGrow: 1,

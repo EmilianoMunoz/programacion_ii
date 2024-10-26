@@ -1,27 +1,51 @@
-import React, { useEffect, useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TextInput, Button } from 'react-native';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import React, { useEffect, useState, useLayoutEffect, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ActivityIndicator, 
+  TextInput, 
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
+interface UserData {
+  name: string;
+  surname: string;
+  email: string;
+  phone: string;
+  coverage: string;
+  dob: string;
+}
+
+const INITIAL_USER_STATE: UserData = {
+  name: '',
+  surname: '',
+  email: '',
+  phone: '',
+  coverage: '',
+  dob: ''
+};
+
+const API_BASE_URL = 'http://192.168.18.166:8080';
+
 const EditUserScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
   const navigation = useNavigation();
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData>(INITIAL_USER_STATE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
-
-  // Estado para los campos editables
-  const [name, setName] = useState('');
-  const [surname, setSurname] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [coverage, setCoverage] = useState('');
-  const [dob, setDob] = useState('');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -29,157 +53,196 @@ const EditUserScreen: React.FC = () => {
     });
   }, [navigation]);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
-      try {
-        const token = await SecureStore.getItemAsync('token');
-        if (!token) throw new Error('No token found');
-
-        let userId: number;
-        if (id && !isNaN(Number(id))) {
-          userId = Number(id);
-        } else {
-          console.error('ID no válido:', id);
-          return;
-        }
-
-        const response = await axios.get(`http://192.168.18.166:8080/users/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.status === 200) {
-          setUserData(response.data);
-          // Inicializar los campos editables con los datos del usuario
-          setName(response.data.name);
-          setSurname(response.data.surname);
-          setEmail(response.data.email);
-          setPhone(response.data.phone);
-          setCoverage(response.data.coverage || '');
-          setDob(response.data.dob);
-        } else {
-          throw new Error('Error fetching user data');
-        }
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        setError('Error al cargar los datos del usuario');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [id]);
-
-  const handleUpdateUser = async () => {
-    // Implementa la lógica para actualizar el usuario aquí
-    // Por ejemplo, enviar una solicitud PUT a tu API con los datos actualizados
-    const token = await SecureStore.getItemAsync('token');
-    if (!token) throw new Error('No token found');
-
+  const fetchUserData = useCallback(async () => {
+    setLoading(true);
     try {
-      const response = await axios.put(`http://192.168.18.166:8080/users/${id}`, {
-        name,
-        surname,
-        email,
-        phone,
-        coverage,
-        dob,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const token = await SecureStore.getItemAsync('token');
+      if (!token) throw new Error('No token found');
+
+      const userId = Number(id);
+      if (isNaN(userId)) {
+        throw new Error('ID no válido');
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (response.status === 200) {
-        // Puedes navegar a otra pantalla o mostrar un mensaje de éxito
-        navigation.goBack(); // Regresar a la pantalla anterior
-      }
+      setUserData(response.data);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setError('Error al cargar los datos del usuario');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const handleUpdateUser = async () => {
+    try {
+      setIsSaving(true);
+      const token = await SecureStore.getItemAsync('token');
+      if (!token) throw new Error('No token found');
+
+      await axios.put(
+        `${API_BASE_URL}/users/${id}`,
+        userData,
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+
+      Alert.alert(
+        'Éxito',
+        'Usuario actualizado correctamente',
+        [{ text: 'OK', onPress: () => router.push('/screens/patientlist') }]
+      );
     } catch (err) {
       console.error('Error updating user:', err);
-      setError('Error al actualizar los datos del usuario');
+      Alert.alert('Error', 'No se pudo actualizar el usuario');
+    } finally {
+      setIsSaving(false);
     }
   };
 
+  const handleInputChange = (field: keyof UserData) => (value: string) => {
+    setUserData(prev => ({ ...prev, [field]: value }));
+  };
+
   if (loading) {
-    return <ActivityIndicator size="large" color="indigo" />;
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
   }
 
   if (error) {
-    return <Text style={[styles.errorText, { color: textColor }]}>{error}</Text>;
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={fetchUserData}
+        >
+          <Text style={styles.retryButtonText}>Reintentar</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
-  if (!userData) {
-    return <Text>No se encontraron datos del usuario.</Text>;
-  }
+  const renderInput = (label: string, field: keyof UserData) => (
+    <View style={styles.inputContainer}>
+      <Text style={[styles.label, { color: textColor }]}>{label}:</Text>
+      <TextInput
+        style={[
+          styles.input,
+          { color: textColor, backgroundColor: backgroundColor }
+        ]}
+        value={userData[field]}
+        onChangeText={handleInputChange(field)}
+        placeholderTextColor="#9CA3AF"
+        editable={!isSaving}
+      />
+    </View>
+  );
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
-      <Text style={[styles.label, { color: textColor }]}>Nombre:</Text>
-      <TextInput
-        style={[styles.input, { color: textColor, backgroundColor: backgroundColor }]}
-        value={name}
-        onChangeText={setName}
-      />
-      <Text style={[styles.label, { color: textColor }]}>Apellido:</Text>
-      <TextInput
-        style={[styles.input, { color: textColor, backgroundColor: backgroundColor }]}
-        value={surname}
-        onChangeText={setSurname}
-      />
-      <Text style={[styles.label, { color: textColor }]}>Email:</Text>
-      <TextInput
-        style={[styles.input, { color: textColor, backgroundColor: backgroundColor }]}
-        value={email}
-        onChangeText={setEmail}
-      />
-      <Text style={[styles.label, { color: textColor }]}>Teléfono:</Text>
-      <TextInput
-        style={[styles.input, { color: textColor, backgroundColor: backgroundColor }]}
-        value={phone}
-        onChangeText={setPhone}
-      />
-      <Text style={[styles.label, { color: textColor }]}>Cobertura:</Text>
-      <TextInput
-        style={[styles.input, { color: textColor, backgroundColor: backgroundColor }]}
-        value={coverage}
-        onChangeText={setCoverage}
-      />
-      <Text style={[styles.label, { color: textColor }]}>Fecha de Nacimiento:</Text>
-      <TextInput
-        style={[styles.input, { color: textColor, backgroundColor: backgroundColor }]}
-        value={dob}
-        onChangeText={setDob}
-      />
-      <Button title="Guardar Cambios" onPress={handleUpdateUser} />
-    </View>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <ScrollView 
+        style={[styles.container, { backgroundColor }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.formContainer}>
+          {renderInput('Nombre', 'name')}
+          {renderInput('Apellido', 'surname')}
+          {renderInput('Email', 'email')}
+          {renderInput('Teléfono', 'phone')}
+          {renderInput('Cobertura', 'coverage')}
+          {renderInput('Fecha de Nacimiento', 'dob')}
+          
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              isSaving && styles.saveButtonDisabled
+            ]}
+            onPress={handleUpdateUser}
+            disabled={isSaving}
+          >
+            <Text style={styles.saveButtonText}>
+              {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formContainer: {
     padding: 20,
+  },
+  inputContainer: {
+    marginBottom: 15,
   },
   label: {
     fontSize: 16,
-    marginVertical: 5,
+    marginBottom: 8,
     fontWeight: '600',
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    height: 45,
+    borderColor: '#E5E7EB',
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 20,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  saveButton: {
+    backgroundColor: 'indigo', // Indigo-600
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#6B7280', // Gray-500
+  },
+  saveButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   errorText: {
-    color: 'red',
+    color: '#EF4444', // Red-500
+    fontSize: 16,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#4F46E5',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
