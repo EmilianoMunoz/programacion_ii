@@ -1,16 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';  // Importar SecureStore
+import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/authcontext';
+import useStyles from '@/styles/(tabs)/settings.styles';
 
 const Settings: React.FC = () => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const itemColor = useThemeColor({}, 'text');
-  const logoutButtonColor = useThemeColor({}, 'tint');
   const { logout } = useAuth();
   const router = useRouter();
+  const styles = useStyles();
 
   const handleLogout = async () => {
     Alert.alert(
@@ -57,60 +55,31 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={styles.container}>
       <View style={styles.menuContainer}>
-        <Link href="/profile" asChild style={[styles.item, { borderColor: itemColor }]}>
+        <Link href="/profile" asChild style={styles.item}>
           <TouchableOpacity>
-            <Text style={[styles.itemText, { color: itemColor }]}>Perfil</Text>
+            <Text style={styles.itemText}>Perfil</Text>
           </TouchableOpacity>
         </Link>
-        <TouchableOpacity style={[styles.item, { borderColor: itemColor }]}>
-          <Text style={[styles.itemText, { color: itemColor }]}>Notificaciones</Text>
+        <TouchableOpacity style={styles.item}>
+          <Text style={styles.itemText}>Notificaciones</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.item, { borderColor: itemColor }]}>
-          <Text style={[styles.itemText, { color: itemColor }]}>Privacidad</Text>
+        <TouchableOpacity style={styles.item}>
+          <Text style={styles.itemText}>Privacidad</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.item, { borderColor: itemColor }]}>
-          <Text style={[styles.itemText, { color: itemColor }]}>Ayuda</Text>
+        <TouchableOpacity style={styles.item}>
+          <Text style={styles.itemText}>Ayuda</Text>
         </TouchableOpacity>
       </View>
       <TouchableOpacity 
-        style={[styles.item, { borderColor: itemColor, backgroundColor: logoutButtonColor }]} 
+        style={styles.logoutButton} 
         onPress={handleLogout}
       >
-        <Text style={[styles.itemText, styles.logoutButtonText]}>Cerrar sesión</Text>
+        <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
       </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  menuContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  item: {
-    width: '100%',
-    padding: 15,
-    borderWidth: 1,
-    borderRadius: 20,
-    marginBottom: 5,
-    alignItems: 'center',
-  },
-  itemText: {
-    fontSize: 16,
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontWeight: '500',
-  },
-});
 
 export default Settings;

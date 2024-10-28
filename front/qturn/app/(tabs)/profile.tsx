@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ActivityIndicator, Alert } from 'react-native';
-import UserInfo from '../../components/carduser';
+import { View, Text, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import UserInfo from '../../components/users/carduser';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
+import useStyles from '@/styles/(tabs)/profile.styles';
 
 interface UserInfoProps {
   name: string;
@@ -14,6 +15,8 @@ interface UserInfoProps {
   phone: string;
   dob: string;
 }
+
+const styles = useStyles();
 
 const Profile: React.FC = () => {
   const backgroundColor = useThemeColor({}, 'background');
@@ -82,7 +85,7 @@ const Profile: React.FC = () => {
         onPress={async () => {
           const userId = await SecureStore.getItemAsync('userId');
           if (userId) {
-            router.push(`/screens/editUser?id=${userId}`); 
+            router.push(`/screens/users/editUser?id=${userId}`); 
           } else {
             Alert.alert('Error', 'No se pudo obtener el ID del usuario');
           }
@@ -94,32 +97,5 @@ const Profile: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingTop: StatusBar.currentHeight || 40,
-  },
-  button: {
-    marginTop: 20,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default Profile;

@@ -1,0 +1,139 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import useStyles from '@/styles/screens/appointments/viewAppointmetn.styles';
+
+interface Appointment {
+  id: string;
+  time: string;
+}
+
+const ViewAppointmentScreen: React.FC = () => {
+  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const styles = useStyles();
+
+  useEffect(() => {
+    fetchViewAppointment();
+  }, []);
+
+  const fetchViewAppointment = async () => {
+    setLoading(true);
+    try {
+      const [token, userId] = await Promise.all([
+        SecureStore.getItemAsync('token'),
+        SecureStore.getItemAsync('userId'),
+      ]);
+
+      if (!token || !userId) {
+        throw new Error('No token or user ID found');
+      }
+
+      try {
+        const response = await axios.get(
+          `http://192.168.18.166:8080/appointments/appointment/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data) {
+          setAppointment(response.data);
+          setError(null);
+        }
+      } catch (axiosError: any) {
+        if (axiosError.response?.status === 404) {
+          setAppointment(null);
+          setError('No tenés ningún turno programado.');
+        } else {
+          console.error('Error fetching next appointment:', axiosError);
+          setError('Error al obtener el próximo turno');
+        }
+      }
+    } catch (err) {
+      console.error('Error in authentication:', err);
+      setError('Error de autenticación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={styles.backButton.backgroundColor} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Próximo Turno</Text>
+
+      {error ? (
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error-outline" size={24} color="#DC2626" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : appointment ? (
+        <View style={styles.appointmentCard}>
+          <View style={styles.appointmentHeader}>
+            <MaterialIcons name="event" size={24} color={styles.backButton.backgroundColor} />
+            <Text style={styles.headerText}>Detalles del Turno</Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.appointmentInfo}>
+            <View style={styles.infoRow}>
+              <MaterialIcons name="confirmation-number" size={20} color={styles.backButton.backgroundColor} />
+              <Text style={styles.label}>
+                ID Turno: <Text style={styles.value}>{appointment.id}</Text>
+              </Text>
+            </View>
+
+            <View style={styles.dateTimeContainer}>
+              <View style={styles.dateTimeItem}>
+                <MaterialIcons name="calendar-today" size={20} color={styles.backButton.backgroundColor} />
+                <Text style={styles.label}>
+                  Fecha: <Text style={styles.value}>{appointment.time.split('T')[0]}</Text>
+                </Text>
+              </View>
+
+              <View style={styles.dateTimeItem}>
+                <MaterialIcons name="access-time" size={20} color={styles.backButton.backgroundColor} />
+                <Text style={styles.label}>
+                  Hora: <Text style={styles.value}>{appointment.time.split('T')[1].substring(0, 5)}</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.noAppointmentContainer}>
+          <MaterialIcons name="event-busy" size={48} color={styles.backButton.backgroundColor} />
+          <Text style={styles.noAppointments}>
+            No hay turnos disponibles
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.button, styles.backButton]}
+          onPress={() => router.back()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="white" />
+          <Text style={styles.buttonText}>Volver</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+export default ViewAppointmentScreen;

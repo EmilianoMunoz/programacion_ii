@@ -29,49 +29,40 @@ public class AppointmentController {
     public ResponseEntity<String> createAppointment(@RequestBody AppointmentDto appointmentDto) {
         try {
             appointmentService.createAppointment(appointmentDto);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                               .body("Cita reservada con éxito");
+            return ResponseEntity.status(HttpStatus.CREATED).body("Cita reservada con éxito");
         } catch (AppException e) {
-            return ResponseEntity.status(e.getStatus())
-                               .body(e.getMessage());
+            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                               .body("El horario seleccionado ya no está disponible");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El horario seleccionado ya no está disponible");
         }
     }
 
     @GetMapping("/available-times")
-    public ResponseEntity<List<String>> getAvailableTimes(
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") String date) {
+    public ResponseEntity<List<String>> getAvailableTimes(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") String date) {
         try {
             LocalDate localDate = LocalDate.parse(date);
             List<String> availableTimes = appointmentService.findAvailableTimes(localDate);
             return ResponseEntity.ok(availableTimes);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                               .body(List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
         }
     }
 
     @GetMapping("/check-availability")
-    public ResponseEntity<Boolean> checkTimeAvailability(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime) {
+    public ResponseEntity<Boolean> checkTimeAvailability(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime) {
         try {
             boolean isAvailable = appointmentService.isTimeSlotAvailable(dateTime);
             return ResponseEntity.ok(isAvailable);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                               .body(false);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
         }
     }
+
     @GetMapping("/appointment/{userId}")
     public ResponseEntity<AppointmentModel> getAppointment(@PathVariable Long userId) {
         try {
             AppointmentModel appointment = appointmentService.findAppointmentForUser(userId);
-            if (appointment == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            return ResponseEntity.ok(appointment);
+            return appointment != null ? ResponseEntity.ok(appointment) : ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
@@ -85,26 +76,44 @@ public class AppointmentController {
         } catch (AppException e) {
             return ResponseEntity.status(e.getStatus()).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Error al cancelar la cita");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al cancelar la cita");
         }
     }
 
     @GetMapping("/doctor/{doctorId}/appointments")
-    public ResponseEntity<List<AppointmentDto>> getAppointmentsForDoctor(
-            @PathVariable Long doctorId,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") String date) {
+    public ResponseEntity<List<AppointmentDto>> getAppointmentsForDoctor(@PathVariable Long doctorId, @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") String date) {
         try {
             LocalDate localDate = LocalDate.parse(date);
             List<AppointmentDto> appointments = appointmentService.findAppointmentsForDoctor(doctorId, localDate);
-            
-            // Si no hay citas, retornar 200 OK con lista vacía en lugar de 404
             return ResponseEntity.ok(appointments);
-            
         } catch (DateTimeParseException e) {
             return ResponseEntity.badRequest().body(List.of());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
+        }
+    }
+
+    @PutMapping("/{appointmentId}")
+    public ResponseEntity<String> updateAppointment(@PathVariable Long appointmentId, @RequestBody AppointmentDto appointmentDto, @RequestParam Long userId, @RequestParam String role) {
+        try {
+            if ("PATIENT".equals(role)) {
+                AppointmentModel appointment = appointmentService.findAppointmentById(appointmentId)
+                        .orElseThrow(() -> new AppException("Cita no encontrada", HttpStatus.NOT_FOUND));
+                
+                if (!appointment.getPatient().getId().equals(userId)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para modificar esta cita");
+                }
+            } else if (!"DOCTOR".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para modificar esta cita");
+            }
+
+            appointmentService.updateAppointment(appointmentId, appointmentDto);
+            return ResponseEntity.ok("Cita actualizada con éxito");
+
+        } catch (AppException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la cita");
         }
     }
 }

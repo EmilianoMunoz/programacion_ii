@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Button, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import styles from '@/styles/screens/users/createUser.styles';
 
 const CreateUserScreen: React.FC = () => {
   const [name, setName] = useState('');
@@ -28,16 +29,6 @@ const CreateUserScreen: React.FC = () => {
       return;
     }
 
-    // Log the data being sent to the server
-    console.log({
-      name,
-      surname,
-      email,
-      phone,
-      coverage,
-      dob,
-      password, // Added for completeness
-    });
 
     try {
       const response = await axios.post(
@@ -49,7 +40,7 @@ const CreateUserScreen: React.FC = () => {
           phone,
           coverage,
           dob,
-          password, // Asegúrate de que la contraseña se envíe si es necesario
+          password,
         },
         {
           headers: {
@@ -59,7 +50,7 @@ const CreateUserScreen: React.FC = () => {
       );
 
       if (response.status === 201) {
-        router.push('/screens/patientlist');
+        router.push('./');
       }
     } catch (err) {
       console.error('Error creating user:', err);
@@ -127,30 +118,5 @@ const CreateUserScreen: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    padding: 20,
-  },
-  label: {
-    fontSize: 16,
-    marginVertical: 5,
-    fontWeight: '600',
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-  },
-});
 
 export default CreateUserScreen;

@@ -1,11 +1,12 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text } from 'react-native';
+import { View, ActivityIndicator, Alert, TouchableOpacity, Text } from 'react-native';
 import axios from 'axios';
 import { useAuth } from '@/authcontext'; 
 import * as SecureStore from 'expo-secure-store';
-import UserList from '@/components/userlist';
+import UserList from '@/components/users/userlist';
 import { useNavigation, router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import styles from '@/styles/screens/users/listUser.styles'
 
 const PatientList: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -56,7 +57,7 @@ const PatientList: React.FC = () => {
   }, []);
 
   const handleNavigateToCreateUser = () => {
-    router.push('/screens/createUser');
+    router.push('/screens/users/createUser');
   };
 
   if (loading) {
@@ -76,31 +77,5 @@ const PatientList: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'flex-start',
-    flexDirection: 'column',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  item: {
-    width: '100%',
-    padding: 15,
-    borderWidth: 1,
-    borderRadius: 20,
-    marginBottom: 5,
-    alignItems: 'center',
-    backgroundColor: 'indigo',
-  },
-  itemText: {
-    fontSize: 16,
-  },
-});
 
 export default PatientList;

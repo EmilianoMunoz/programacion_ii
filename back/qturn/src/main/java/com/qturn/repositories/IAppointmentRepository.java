@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface IAppointmentRepository extends JpaRepository<AppointmentModel, Long> {
     
-    List<AppointmentModel> findByDoctorAndTime(UserModel doctor, LocalDateTime time);
+    List<AppointmentModel> findByDoctorAndTime(UserModel doctorId, LocalDateTime time);
     
     List<AppointmentModel> findByTime(LocalDateTime time);
     
@@ -24,6 +24,8 @@ public interface IAppointmentRepository extends JpaRepository<AppointmentModel, 
 
     List<AppointmentModel> findByDoctor_IdAndTimeAfter(Long doctorId, LocalDateTime after);
 
-    List<AppointmentModel> findByDoctor_IdAndTimeBetween(Long doctorId, LocalDateTime startOfDay, LocalDateTime endOfDay);
+    List<AppointmentModel> findByDoctor_IdAndTimeBetween(Long doctorId, LocalDateTime start, LocalDateTime end);
+
+    List<AppointmentModel> findByDoctor_IdAndTime(Long doctorId, LocalDateTime time);
 
 }

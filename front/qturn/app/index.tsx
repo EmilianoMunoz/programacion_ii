@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import {
   View,
   TextInput,
-  StyleSheet,
   Text,
   Pressable,
   Image,
   ScrollView,
   Alert,
-  Dimensions,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -19,13 +17,15 @@ import { router } from 'expo-router';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/authcontext';
+import useStyles from '@/styles/index.styles';
 
-const { width: windowWidth } = Dimensions.get('window');
 
 interface LoginCredentials {
   email: string;
   password: string;
 }
+
+const styles = useStyles();
 
 const TEST_USERS = {
   ADMIN: { email: 'emiliano@example.com', password: '2205' },
@@ -43,7 +43,6 @@ const LoginScreen: React.FC = () => {
 
   const { login } = useAuth();
 
-  // Theme colors
   const theme = {
     background: useThemeColor({}, 'background'),
     text: useThemeColor({}, 'text'),
@@ -68,22 +67,82 @@ const LoginScreen: React.FC = () => {
     return true;
   };
 
-  const saveUserData = async (userData: any) => {
-    const { token, id, name, surname, email, role } = userData;
-    const items = {
-      token,
-      userId: id.toString(),
-      name,
-      surname,
-      email,
-      role,
-    };
+  const clearAllData = async () => {
+    try {
+      const keys = [
+        'userToken',
+        'doctor_id',
+        'userData',
+        'userId',
+        'name',
+        'surname',
+        'email',
+        'role',
+        'specialty_id',
+        'license_number',
+        'patient_id',
+        'medical_history_id'
+      ];
+      
+      await Promise.all(keys.map(key => SecureStore.deleteItemAsync(key)));
+    } catch (error) {
+      console.error('Error al limpiar datos:', error);
+    }
+  };
 
-    await Promise.all(
-      Object.entries(items).map(([key, value]) => 
-        SecureStore.setItemAsync(key, value)
-      )
-    );
+  const saveUserData = async (userData: any) => {
+    try {
+      
+      const { token, id, name, surname, email, role } = userData;
+      
+      const baseItems = {
+        token,
+        userId: id.toString(),
+        name,
+        surname,
+        email,
+        role,
+      };
+
+      await Promise.all(
+        Object.entries(baseItems).map(async ([key, value]) => {
+          await SecureStore.setItemAsync(key, value?.toString() ?? '');
+        })
+      );
+
+      if (role === 'DOCTOR') {
+        await SecureStore.setItemAsync('doctor_id', id.toString());
+        
+        if (userData.specialtyId) {
+          await SecureStore.setItemAsync('specialty_id', userData.specialtyId.toString());
+        }
+        
+        if (userData.licenseNumber) {
+          await SecureStore.setItemAsync('license_number', userData.licenseNumber.toString());
+        }
+      } else if (role === 'PATIENT') {
+        await SecureStore.setItemAsync('patient_id', id.toString());
+        
+        if (userData.medicalHistory) {
+          await SecureStore.setItemAsync('medical_history_id', userData.medicalHistory.toString());
+        }
+      }
+
+      await SecureStore.setItemAsync('userData', JSON.stringify(userData));
+
+      const verificationPromises = [
+        SecureStore.getItemAsync('token'),
+        SecureStore.getItemAsync(role === 'DOCTOR' ? 'doctor_id' : 'patient_id'),
+        SecureStore.getItemAsync('userData'),
+      ];
+
+      const [verifiedToken, verifiedId, verifiedUserData] = await Promise.all(verificationPromises);
+      
+     
+    } catch (error) {
+      console.error('Error al guardar datos de usuario:', error);
+      throw error;
+    }
   };
 
   const handleNavigation = (role: string) => {
@@ -107,6 +166,8 @@ const LoginScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
+      await clearAllData();
+
       const response = await axios.post(
         'http://192.168.18.166:8080/login',
         loginData,
@@ -115,18 +176,33 @@ const LoginScreen: React.FC = () => {
         }
       );
 
+
       if (response.status === 200 && response.data) {
+        if (!response.data.id || !response.data.role) {
+          throw new Error('Datos de usuario incompletos en la respuesta');
+        }
+
+
         await saveUserData(response.data);
+        
+        if (response.data.role === 'DOCTOR') {
+          const storedDoctorId = await SecureStore.getItemAsync('doctor_id');
+          if (!storedDoctorId) {
+            throw new Error('Error al guardar ID del doctor');
+          }
+        }
+
         await login(response.data);
         handleNavigation(response.data.role);
       }
     } catch (error) {
+      console.error('Error detallado:', error);
+      
       const errorMessage = axios.isAxiosError(error)
         ? error.response?.data?.message || error.message
         : 'Error inesperado al intentar iniciar sesión';
       
       Alert.alert('Error', errorMessage);
-      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -232,66 +308,5 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: windowWidth * 0.1,
-    paddingVertical: 40,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    width: windowWidth * 0.4,
-    height: windowWidth * 0.4,
-    resizeMode: 'contain',
-  },
-  formContainer: {
-    width: '100%',
-    gap: 16,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    height: 56,
-    paddingHorizontal: 16,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-    fontSize: 16,
-  },
-  eyeButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  button: {
-    width: '100%',
-    height: 56,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-  },
-  testButtonsContainer: {
-    marginTop: 24,
-    gap: 12,
-  },
-});
 
 export default LoginScreen;
