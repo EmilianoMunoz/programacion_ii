@@ -161,6 +161,7 @@ public class AppointmentService {
                 .map(appointment -> {
                     AppointmentDto dto = appointmentMapper.toAppointmentDto(appointment);
                     dto.setPatientName(appointment.getPatient().getName());
+                    dto.setPatientSurname(appointment.getPatient().getSurname());
                     dto.setPatientCoverage(appointment.getPatient().getCoverage());
                     return dto;
                 })

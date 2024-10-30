@@ -1,31 +1,17 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  Text,
-  Pressable,
-  Image,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import {View, TextInput, Text, Pressable, Image, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform} from 'react-native';
 import axios from 'axios';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { router } from 'expo-router';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/authcontext';
-import useStyles from '@/styles/index.styles';
-
+import createStyles from '@/styles/index.styles';
 
 interface LoginCredentials {
   email: string;
   password: string;
 }
-
-const styles = useStyles();
 
 const TEST_USERS = {
   ADMIN: { email: 'emiliano@example.com', password: '2205' },
@@ -34,6 +20,31 @@ const TEST_USERS = {
 } as const;
 
 const LoginScreen: React.FC = () => {
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const buttonBackground = useThemeColor({}, 'buttonBackground');
+  const buttonTextColor = useThemeColor({}, 'buttonText');
+  const inputBackgroundColor = useThemeColor({}, 'background');
+
+  const styles = createStyles({
+    backgroundColor,
+    buttonBackground: tintColor,
+    buttonTextColor,
+    textColor,
+    inputBackground: inputBackgroundColor,
+  });
+
+  const theme = {
+    background: backgroundColor,
+    text: textColor,
+    tint: tintColor,
+    error: '#ff4444',
+    inputBackground: inputBackgroundColor,
+    buttonText: buttonTextColor,
+    buttonBackground: buttonBackground,
+  };
+  
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',
@@ -43,13 +54,6 @@ const LoginScreen: React.FC = () => {
 
   const { login } = useAuth();
 
-  const theme = {
-    background: useThemeColor({}, 'background'),
-    text: useThemeColor({}, 'text'),
-    tint: useThemeColor({}, 'tint'),
-    error: '#ff4444',
-    inputBackground: useThemeColor({}, 'background'),
-  };
 
   const handleCredentialChange = (field: keyof LoginCredentials) => (value: string) => {
     setCredentials(prev => ({ ...prev, [field]: value }));
@@ -78,10 +82,6 @@ const LoginScreen: React.FC = () => {
         'surname',
         'email',
         'role',
-        'specialty_id',
-        'license_number',
-        'patient_id',
-        'medical_history_id'
       ];
       
       await Promise.all(keys.map(key => SecureStore.deleteItemAsync(key)));
@@ -113,19 +113,9 @@ const LoginScreen: React.FC = () => {
       if (role === 'DOCTOR') {
         await SecureStore.setItemAsync('doctor_id', id.toString());
         
-        if (userData.specialtyId) {
-          await SecureStore.setItemAsync('specialty_id', userData.specialtyId.toString());
-        }
-        
-        if (userData.licenseNumber) {
-          await SecureStore.setItemAsync('license_number', userData.licenseNumber.toString());
-        }
       } else if (role === 'PATIENT') {
         await SecureStore.setItemAsync('patient_id', id.toString());
-        
-        if (userData.medicalHistory) {
-          await SecureStore.setItemAsync('medical_history_id', userData.medicalHistory.toString());
-        }
+      
       }
 
       await SecureStore.setItemAsync('userData', JSON.stringify(userData));
@@ -148,11 +138,11 @@ const LoginScreen: React.FC = () => {
   const handleNavigation = (role: string) => {
     switch (role) {
       case 'PATIENT':
-        router.replace('/(tabs)/home');
+        router.replace('/home');
         break;
       case 'ADMIN':
       case 'DOCTOR':
-        router.replace('/(tabs)/dashboard');
+        router.replace('/dashboard');
         break;
       default:
         throw new Error(`Rol no reconocido: ${role}`);
@@ -307,6 +297,5 @@ const LoginScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
-
 
 export default LoginScreen;

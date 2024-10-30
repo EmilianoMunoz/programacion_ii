@@ -9,6 +9,7 @@ public class AppointmentDto {
     private LocalDateTime time;
     private Long doctorId;
     private Long patientId;
-    private String patientName;      // Nombre del paciente
-    private String patientCoverage;  // Cobertura del paciente
+    private String patientName;  
+    private String patientSurname;
+    private String patientCoverage;
 }

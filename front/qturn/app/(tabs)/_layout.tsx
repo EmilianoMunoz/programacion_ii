@@ -28,6 +28,21 @@ export default function TabLayout() {
               focused={focused}
             />
           ),
+          href: (user?.role === 'ADMIN' || user?.role === 'PATIENT') ? '/home' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Dashboard',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? 'bar-chart' : 'bar-chart-outline'}
+              color={color}
+              focused={focused}
+            />
+          ),
+          href: (user?.role === 'ADMIN' || user?.role === 'DOCTOR') ? '/dashboard' : null,
         }}
       />
       <Tabs.Screen
@@ -56,20 +71,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? 'bar-chart' : 'bar-chart-outline'}
-              color={color}
-              focused={focused}
-            />
-          ),
-          href: (user?.role === 'ADMIN' || user?.role === 'DOCTOR') ? '/dashboard' : null,
-        }}
-      />
+      
     </Tabs>
   );
 }

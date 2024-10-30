@@ -1,14 +1,37 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/authcontext';
-import useStyles from '@/styles/(tabs)/settings.styles';
+import createStyles from '@/styles/(tabs)/settings.styles';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const Settings: React.FC = () => {
   const { logout } = useAuth();
   const router = useRouter();
-  const styles = useStyles();
+
+  const backgroundColor = useThemeColor({}, 'background');
+  const titleColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const buttonBackground = useThemeColor({}, 'buttonBackground');
+  const buttonTextColor = useThemeColor({}, 'buttonText');
+  const inputBackgroundColor = useThemeColor({}, 'text');
+  const itemBorderColor = useThemeColor({}, 'itemBorderColor');
+  const itemTextColor = useThemeColor({}, 'itemTextColor');
+  const logoutButtonColor = useThemeColor({}, 'logoutButtonColor');
+  const logoutButtonTextColor = useThemeColor({}, 'logoutButtonTextColor');
+
+  const styles = createStyles({
+    backgroundColor,
+    buttonBackground: tintColor,
+    buttonTextColor,
+    titleColor,
+    inputBackground: inputBackgroundColor,
+    itemBorderColor,
+    itemTextColor,
+    logoutButtonColor,
+    logoutButtonTextColor,
+  });
 
   const handleLogout = async () => {
     Alert.alert(
@@ -56,6 +79,13 @@ const Settings: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.logoContainer}>
+        <Image 
+          source={require('@/assets/images/logo.png')} 
+          style={styles.logo} 
+          resizeMode="contain"
+        />
+      </View>
       <View style={styles.menuContainer}>
         <Link href="/profile" asChild style={styles.item}>
           <TouchableOpacity>

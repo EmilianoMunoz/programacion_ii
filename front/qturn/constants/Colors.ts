@@ -11,10 +11,18 @@ export const Colors = {
     tabIconSelected: tintColorLight,
     buttonText: '#ffffff',
     buttonBackground: tintColorLight,
+    buttonColor: '#4B0082',
     titleColor: '#333',
-    warning: '#FEF3C7', // Color de advertencia
-    warningText: '#92400E', // Color del texto de advertencia
-    primary: '#6200ee',  // Asegúrate de definir el color aquí
+    warning: '#FEF3C7',
+    warningText: '#92400E',
+    primary: '#6200ee',
+    primaryColor: '#6200ee',
+    dangerColor: '#B00020',
+    itemBorderColor: 'indigo',
+    itemTextColor: '#11181C',
+    logoutButtonColor: 'indigo',
+    logoutButtonTextColor: '#FFFFFF',
+    inputBackground: '#F0F0F0',
   },
   dark: {
     text: '#ECEDEE',
@@ -25,9 +33,17 @@ export const Colors = {
     tabIconSelected: 'white',
     buttonText: '#ffffff',
     buttonBackground: tintColorDark,
+    buttonColor: '#8A2BE2',
     titleColor: '#fff',
-    warning: '#FEF3C7', // Color de advertencia
-    warningText: '#92400E', // Color del texto de advertencia
-    primary: '#bb86fc',  // Asegúrate de definir el color aquí
+    warning: '#FEF3C7',
+    warningText: '#92400E',
+    primary: '#bb86fc',
+    primaryColor: '#bb86fc',
+    dangerColor: '#CF6679',
+    itemBorderColor: 'indigo',
+    itemTextColor: '#ECEDEE',
+    logoutButtonColor: 'indigo',
+    logoutButtonTextColor: '#FFFFFF',
+    inputBackground: '#2F2F2F',
   },
 };

@@ -22,7 +22,6 @@ interface UserData {
   email: string;
   phone: string;
   coverage: string;
-  dob: string;
 }
 
 const INITIAL_USER_STATE: UserData = {
@@ -31,7 +30,6 @@ const INITIAL_USER_STATE: UserData = {
   email: '',
   phone: '',
   coverage: '',
-  dob: ''
 };
 
 const API_BASE_URL = 'http://192.168.18.166:8080';
@@ -96,7 +94,7 @@ const EditUserScreen: React.FC = () => {
       Alert.alert(
         'Éxito',
         'Usuario actualizado correctamente',
-        [{ text: 'OK', onPress: () => router.push('./') }]
+        [{ text: 'OK', onPress: () => router.push('/(tabs)/dashboard') }]
       );
     } catch (err) {
       console.error('Error updating user:', err);
@@ -162,9 +160,7 @@ const EditUserScreen: React.FC = () => {
           {renderInput('Apellido', 'surname')}
           {renderInput('Email', 'email')}
           {renderInput('Teléfono', 'phone')}
-          {renderInput('Cobertura', 'coverage')}
-          {renderInput('Fecha de Nacimiento', 'dob')}
-          
+          {renderInput('Cobertura', 'coverage')}          
           <TouchableOpacity
             style={[
               styles.saveButton,

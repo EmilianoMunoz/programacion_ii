@@ -1,25 +1,35 @@
 import { StyleSheet } from "react-native";
-import { useThemeColor } from '@/hooks/useThemeColor';
 
-const useStyles = () => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const itemBorderColor = useThemeColor({}, 'text');
-  const itemTextColor = useThemeColor({}, 'text');
-  const logoutButtonColor = useThemeColor({}, 'buttonBackground'); // Color para el botón de cerrar sesión
-  const logoutButtonTextColor = useThemeColor({}, 'buttonText');
-
-  return StyleSheet.create({
+const createStyles = (theme: {
+  backgroundColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  titleColor: string;
+  inputBackground: string;
+  itemBorderColor: string;
+  itemTextColor: string;
+  logoutButtonColor: string;
+  logoutButtonTextColor: string;
+}) => StyleSheet.create({
     container: {
       flex: 1,
-      justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.backgroundColor,
+    },
+    logoContainer: {
+      marginBottom: 30, 
+      alignItems: 'center',
+    },
+    logo: {
+      width: 150,
+      height: 150,
     },
     menuContainer: {
       flex: 1,
       justifyContent: 'center',
       width: '100%',
+      marginTop: 20,
     },
     item: {
       width: '100%',
@@ -28,26 +38,26 @@ const useStyles = () => {
       borderRadius: 20,
       marginBottom: 5,
       alignItems: 'center',
-      borderColor: itemBorderColor,
+      borderColor: theme.itemBorderColor,
     },
     itemText: {
       fontSize: 16,
-      color: itemTextColor,
+      color: theme.itemTextColor,
     },
     logoutButton: {
-      borderColor: itemBorderColor, // Añadido para mantener el mismo estilo de borde
+      borderColor: theme.itemBorderColor,
       borderWidth: 1,
       borderRadius: 20,
       padding: 15,
       width: '100%',
       alignItems: 'center',
-      backgroundColor: logoutButtonColor, // Color de fondo para el botón de cerrar sesión
+      backgroundColor: theme.logoutButtonColor, 
+      marginTop: 30, // Separación extra para el botón de logout
     },
     logoutButtonText: {
-      color: logoutButtonTextColor,
+      color: theme.logoutButtonTextColor,
       fontWeight: '500',
     },
   });
-};
 
-export default useStyles;
+export default createStyles;

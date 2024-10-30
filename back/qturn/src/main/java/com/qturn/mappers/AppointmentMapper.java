@@ -8,15 +8,15 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface AppointmentMapper {
 
-    @Mapping(source = "id", target = "id")                    // Mapea el ID de la cita
-    @Mapping(source = "time", target = "time")                // Mapea la fecha y hora
-    @Mapping(source = "doctor.id", target = "doctorId")       // Mapea el ID del doctor
-    @Mapping(source = "patient.id", target = "patientId")     // Mapea el ID del paciente
+    @Mapping(source = "id", target = "id")                    
+    @Mapping(source = "time", target = "time")                
+    @Mapping(source = "doctor.id", target = "doctorId")       
+    @Mapping(source = "patient.id", target = "patientId")     
     AppointmentDto toAppointmentDto(AppointmentModel appointment);
 
-    @Mapping(source = "id", target = "id")                    // Mapea el ID de la cita
-    @Mapping(source = "time", target = "time")                // Mapea la fecha y hora
-    @Mapping(source = "doctorId", target = "doctor.id")       // Mapea el ID del doctor
-    @Mapping(source = "patientId", target = "patient.id")     // Mapea el ID del paciente
+    @Mapping(source = "id", target = "id")                    
+    @Mapping(source = "time", target = "time")                
+    @Mapping(source = "doctorId", target = "doctor.id")       
+    @Mapping(source = "patientId", target = "patient.id")     
     AppointmentModel toAppointmentModel(AppointmentDto appointmentDto);
 }

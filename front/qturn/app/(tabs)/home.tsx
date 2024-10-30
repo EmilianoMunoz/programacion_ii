@@ -1,12 +1,35 @@
 import React from 'react';
 import { View, Text, Pressable, useWindowDimensions, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import useStyles from '@/styles/(tabs)/home.styles';
+import createStyles from '@/styles/(tabs)/dashboard.styles';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const HomeScreen: React.FC = () => {
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const styles = useStyles();
+
+  const backgroundColor = useThemeColor({}, 'background');
+  const titleColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const buttonTextColor = useThemeColor({}, 'buttonText');
+  const inputBackgroundColor = useThemeColor({}, 'text');
+
+  const styles = createStyles({
+    backgroundColor,
+    buttonBackground: tintColor,
+    buttonTextColor,
+    titleColor,
+    inputBackground: inputBackgroundColor,
+  });
+
+  const DashboardTitle: React.FC = () => (
+    <View style={styles.titleContainer}>
+      <Text style={styles.titleMain}>Sistema de</Text> 
+      <Text style={styles.titleHighlight}>Turnos</Text>
+      <View style={styles.titleAccent} />
+    </View>
+  );
+
 
   const buttons = [
     { title: 'Solicitar Turno', onPress: () => router.push('/screens/appointments/newAppointment') },
@@ -26,7 +49,7 @@ const HomeScreen: React.FC = () => {
           resizeMode="contain"
         />
       </View>
-      <Text style={styles.title}>Sistema de Turnos</Text>
+      <DashboardTitle />
       <View style={styles.buttonGrid}>
         {buttons.map((button, index) => (
           <Pressable

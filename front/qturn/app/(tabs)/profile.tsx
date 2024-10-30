@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import UserInfo from '../../components/users/carduser';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
-import useStyles from '@/styles/(tabs)/profile.styles';
+import createStyles from '@/styles/(tabs)/profile.styles';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface UserInfoProps {
   name: string;
@@ -16,11 +16,25 @@ interface UserInfoProps {
   dob: string;
 }
 
-const styles = useStyles();
 
 const Profile: React.FC = () => {
   const backgroundColor = useThemeColor({}, 'background');
-  const buttonColor = useThemeColor({}, 'tint');
+  const titleColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const buttonBackground = useThemeColor({}, 'buttonBackground');
+  const buttonTextColor = useThemeColor({}, 'buttonText');
+  const inputBackgroundColor = useThemeColor({}, 'text');
+  const buttonColor = useThemeColor({}, 'buttonColor'); // Asegúrate de obtenerlo aquí
+
+  const styles = createStyles({
+    backgroundColor,
+    buttonBackground,
+    buttonTextColor,
+    titleColor,
+    inputBackground: inputBackgroundColor,
+    buttonColor,
+  });
+
   const router = useRouter();
 
   const [userData, setUserData] = useState<UserInfoProps | null>(null);

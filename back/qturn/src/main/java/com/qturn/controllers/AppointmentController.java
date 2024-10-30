@@ -113,7 +113,7 @@ public class AppointmentController {
         } catch (AppException e) {
             return ResponseEntity.status(e.getStatus()).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la cita");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar el turno");
         }
     }
 }

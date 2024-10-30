@@ -8,11 +8,23 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '@/authcontext';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutNavigation() {
+  // Movido dentro del componente que usa ThemeProvider
   const colorScheme = useColorScheme();
+
+  return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }}/>
+        <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+      </Stack>
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -28,13 +40,8 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }}/>
-          <Stack.Screen name="(tabs)" options={{headerShown: false}} />
-        </Stack>
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <RootLayoutNavigation />
+    </AuthProvider>
   );
 }

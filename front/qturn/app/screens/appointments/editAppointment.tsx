@@ -4,9 +4,10 @@ import { format, addDays, startOfWeek, isSameDay, isPast, parseISO } from 'date-
 import { es } from 'date-fns/locale';
 import axios, { AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import useStyles from '@/styles/screens/appointments/editAppointment.styles';
+import createStyles from '@/styles/screens/appointments/editAppointment.styles';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface TimeSlot {
   time: string;
@@ -25,11 +26,11 @@ interface ApiError {
   status: number;
 }
 
-const styles = useStyles();
 
 const EditAppointmentScreen = () => {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [currentWeek, setCurrentWeek] = useState<Date[]>([]);
   const [currentAppointment, setCurrentAppointment] = useState<Appointment | null>(null);
@@ -37,6 +38,25 @@ const EditAppointmentScreen = () => {
   const [initializing, setInitializing] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+
+  const backgroundColor = useThemeColor({}, 'background');
+  const titleColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const buttonBackground = useThemeColor({}, 'buttonBackground');
+  const buttonTextColor = useThemeColor({}, 'buttonText');
+  const inputBackgroundColor = useThemeColor({}, 'inputBackground'); 
+  const borderColor = useThemeColor({}, 'itemBorderColor'); 
+  const textColor = useThemeColor({}, 'itemTextColor');
+  
+  const styles = createStyles({
+    backgroundColor,
+    buttonBackground,
+    buttonTextColor,
+    titleColor,
+    inputBackground: inputBackgroundColor,
+    borderColor,     
+    textColor,        
+    });
 
   const API_URL = 'http://192.168.18.166:8080';
 
@@ -55,39 +75,56 @@ const EditAppointmentScreen = () => {
     try {
       const storedToken = await SecureStore.getItemAsync('token');
       const storedUserId = await SecureStore.getItemAsync('userId');
-
+  
       if (!storedToken || !storedUserId) {
-        throw new Error('No se encontraron las credenciales necesarias');
+        setError('No se encontraron las credenciales necesarias');
+        return;
       }
-
+  
       setToken(storedToken);
       setUserId(storedUserId);
-
-      const response = await axios.get<Appointment>(
-        `${API_URL}/appointments/appointment/${storedUserId}`,
-        {
-          headers: { 
-            Authorization: `Bearer ${storedToken}`,
-            'Content-Type': 'application/json'
+  
+      try {
+        const response = await axios.get<Appointment>(
+          `${API_URL}/appointments/appointment/${storedUserId}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${storedToken}`,
+              'Content-Type': 'application/json'
+            }
           }
+        );
+  
+        if (response.data) {
+          setCurrentAppointment(response.data);
+          const appointmentDate = parseISO(response.data.time);
+          setSelectedDate(appointmentDate);
+          setCurrentWeek(generateCurrentWeek(appointmentDate));
+          await fetchTimeSlots(appointmentDate);
         }
-      );
-
-      if (response.data) {
-        setCurrentAppointment(response.data);
-        const appointmentDate = parseISO(response.data.time);
-        setSelectedDate(appointmentDate);
-        setCurrentWeek(generateCurrentWeek(appointmentDate));
-        await fetchTimeSlots(appointmentDate);
+      } catch (error) {
+        const axiosError = error as AxiosError<ApiError>;
+        
+        if (axiosError.response?.status === 404) {
+          Alert.alert(
+            'Información',
+            'No tenés ningún turno programado',
+            [
+              { 
+                text: 'OK', 
+                onPress: () => router.back() 
+              }
+            ]
+          );
+          return;
+        }
+        
+        console.error('Error al obtener el turno:', axiosError.response?.data || axiosError.message);
+        setError('No se pudo cargar la información del turno');
       }
     } catch (error) {
-      const axiosError = error as AxiosError<ApiError>;
-      console.error('Error al inicializar:', axiosError.response?.data || axiosError.message);
-      Alert.alert(
-        "Error",
-        "No se pudo cargar la información del turno. Por favor, intentá más tarde."
-      );
-      router.back();
+      console.error('Error en la inicialización:', error);
+      setError('Ocurrió un error inesperado');
     } finally {
       setInitializing(false);
     }
@@ -218,92 +255,107 @@ const EditAppointmentScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      {currentAppointment && (
-        <View style={styles.currentAppointmentInfo}>
-          <MaterialIcons name="info" size={24} color="indigo" />
-          <Text style={styles.currentAppointmentText}>
-            Turno actual: {format(parseISO(currentAppointment.time), 'EEEE dd MMMM, HH:mm', { locale: es })}
-          </Text>
-        </View>
-      )}
+    <>
+      <Stack.Screen 
+        options={{
+          title: "Modificar Turno",
+          headerStyle: {
+            backgroundColor: backgroundColor,
+          },
+          headerTintColor: textColor,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }} 
+      />
+      
+      <View style={styles.container}>
+        {currentAppointment && (
+          <View style={styles.currentAppointmentInfo}>
+            <MaterialIcons name="info" size={24} color="indigo" />
+            <Text style={styles.currentAppointmentText}>
+              Turno actual: {format(parseISO(currentAppointment.time), 'EEEE dd MMMM, HH:mm', { locale: es })}
+            </Text>
+          </View>
+        )}
 
-      <View style={styles.dateSection}>
-        <Text style={styles.subtitle}>
-          Seleccione una nueva fecha:
-        </Text>
-        
-        <FlatList
-          data={currentWeek}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.dateButton,
-                selectedDate && isSameDay(selectedDate, item) && styles.selectedButton
-              ]}
-              onPress={() => handleDateSelect(item)}
-            >
-              <MaterialIcons 
-                name="event" 
-                size={24} 
-                color={selectedDate && isSameDay(selectedDate, item) ? 'indigo' : '#000'} 
-              />
-              <Text style={[
-                styles.dateText,
-                selectedDate && isSameDay(selectedDate, item) ? { color: 'indigo' } : null
-              ]}>
-                {format(item, 'eeee, dd MMMM', { locale: es })}
-              </Text>
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => item.toISOString()}
-        />
-      </View>
-
-      {selectedDate && (
-        <View style={styles.timesContainer}>
+        <View style={styles.dateSection}>
           <Text style={styles.subtitle}>
-            Horarios disponibles:
+            Seleccione una nueva fecha:
           </Text>
           
-          {isLoading ? (
-            <ActivityIndicator size="large" color="indigo" />
-          ) : (
-            <FlatList
-              data={timeSlots}
-              renderItem={({ item: timeSlot }) => {
-                const isPastTime = selectedDate && 
-                  isPast(new Date(selectedDate?.toISOString().split('T')[0] + 'T' + timeSlot.time));
-
-                const isCurrentTime = currentAppointment && 
-                  format(parseISO(currentAppointment.time), 'HH:mm') === timeSlot.time;
-
-                const isAvailableAndCurrent = timeSlot.isAvailable || isCurrentTime;
-
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.timeButton,
-                      isAvailableAndCurrent && !isPastTime ? styles.availableTimeButton : styles.unavailableTimeButton
-                    ]}
-                    disabled={!isAvailableAndCurrent || isPastTime}
-                    onPress={() => handleTimeSelect(timeSlot)}
-                  >
-                    <Text style={[
-                      styles.timeText,
-                      isAvailableAndCurrent ? styles.availableTimeText : styles.unavailableTimeText
-                    ]}>
-                      {timeSlot.time}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }}
-              keyExtractor={(item) => item.time}
-            />
-          )}
+          <FlatList
+            data={currentWeek}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.dateButton,
+                  selectedDate && isSameDay(selectedDate, item) && styles.selectedButton
+                ]}
+                onPress={() => handleDateSelect(item)}
+              >
+                <MaterialIcons 
+                  name="event" 
+                  size={24} 
+                  color={selectedDate && isSameDay(selectedDate, item) ? 'indigo' : '#000'} 
+                />
+                <Text style={[
+                  styles.dateText,
+                  selectedDate && isSameDay(selectedDate, item) ? { color: 'indigo' } : null
+                ]}>
+                  {format(item, 'eeee, dd MMMM', { locale: es })}
+                </Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.toISOString()}
+          />
         </View>
-      )}
-    </View>
+
+        {selectedDate && (
+          <View style={styles.timesContainer}>
+            <Text style={styles.subtitle}>
+              Horarios disponibles:
+            </Text>
+            
+            {isLoading ? (
+              <ActivityIndicator size="large" color="indigo" />
+            ) : (
+              <FlatList
+                data={timeSlots}
+                renderItem={({ item: timeSlot }) => {
+                  const isPastTime = selectedDate && 
+                    isPast(new Date(selectedDate?.toISOString().split('T')[0] + 'T' + timeSlot.time));
+
+                  const isCurrentTime = currentAppointment && 
+                    format(parseISO(currentAppointment.time), 'HH:mm') === timeSlot.time;
+
+                  const isAvailableAndCurrent = timeSlot.isAvailable || isCurrentTime;
+
+                  return (
+                    <TouchableOpacity
+                      style={[
+                        styles.timeButton,
+                        isAvailableAndCurrent && !isPastTime ? styles.availableTimeButton : styles.unavailableTimeButton
+                      ]}
+                      disabled={!isAvailableAndCurrent || isPastTime}
+                      onPress={() => handleTimeSelect(timeSlot)}
+                    >
+                      <Text style={[
+                        styles.timeText,
+                        isAvailableAndCurrent ? styles.availableTimeText : styles.unavailableTimeText
+                      ]}>
+                        {timeSlot.time}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }}
+                keyExtractor={(item) => item.time}
+              />
+            )}
+          </View>
+        )}
+      </View>
+    </>
   );
 };
 

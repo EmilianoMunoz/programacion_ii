@@ -1,16 +1,18 @@
 import { StyleSheet } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
 
-const useStyles = () => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const dangerColor = '#EF4444';
-  const primaryColor = 'indigo';
-  return StyleSheet.create({
+const createStyles = (theme: {
+  backgroundColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  titleColor: string;
+  inputBackground: string;
+  primaryColor: string;
+  dangerColor: string;
+}) => StyleSheet.create({
     container: {
       flex: 1,
       padding: 20,
-      backgroundColor,
+      backgroundColor: theme.backgroundColor,
     },
     title: {
       fontSize: 28,
@@ -73,7 +75,7 @@ const useStyles = () => {
       marginVertical: 20,
     },
     errorText: {
-      color: dangerColor,
+      color: theme.dangerColor,
       marginLeft: 8,
       fontSize: 16,
     },
@@ -103,7 +105,7 @@ const useStyles = () => {
       backgroundColor: '#EF4444',
     },
     backButton: {
-      backgroundColor: primaryColor,
+      backgroundColor: theme.primaryColor,
     },
     buttonText: {
       color: 'white',
@@ -112,6 +114,5 @@ const useStyles = () => {
       fontSize: 16,
     },
   });
-};
 
-export default useStyles;
+export default createStyles;

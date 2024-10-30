@@ -1,19 +1,20 @@
 import { StatusBar, StyleSheet } from "react-native";
-import { useThemeColor } from '@/hooks/useThemeColor';
 
-const useStyles = () => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const buttonBackground = useThemeColor({}, 'buttonBackground');
-  const buttonTextColor = useThemeColor({}, 'buttonText');
-
-  return StyleSheet.create({
+const createStyles = (theme: {
+  backgroundColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  titleColor: string;
+  inputBackground: string;
+  buttonColor: string;
+}) => StyleSheet.create({
     container: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 40,
       paddingTop: StatusBar.currentHeight || 40,
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.backgroundColor,
     },
     button: {
       marginTop: 20,
@@ -22,10 +23,10 @@ const useStyles = () => {
       borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: buttonBackground,
+      backgroundColor: theme.buttonBackground,
     },
     buttonText: {
-      color: buttonTextColor,
+      color: theme.buttonTextColor,
       fontSize: 16,
       fontWeight: 'bold',
     },
@@ -35,6 +36,5 @@ const useStyles = () => {
       alignItems: 'center',
     },
   });
-};
 
-export default useStyles;
+export default createStyles;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
 interface User {
@@ -11,6 +11,7 @@ interface User {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
+  doctorId: number | null;
   login: (userData: User) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
@@ -65,13 +66,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const contextValue: AuthContextType = {
+  const contextValue = useMemo(() => ({
     isAuthenticated,
     user,
     login,
     logout,
-    isLoading
-  };
+    isLoading,
+    doctorId: null
+  }), [isAuthenticated, user, login, logout, isLoading]);
 
   return (
     <AuthContext.Provider value={contextValue}>

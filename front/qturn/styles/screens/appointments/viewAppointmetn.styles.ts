@@ -1,23 +1,22 @@
-import { StyleSheet } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { StyleSheet } from "react-native";
 
-const useStyles = () => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const primaryColor = 'indigo'; // Cambia esto si necesitas un color de tema
+const createStyles = (theme: {
+  backgroundColor: string;
+  primaryColor: string;
+  textColor: string;
 
-  return StyleSheet.create({
+}) => StyleSheet.create({
     container: {
       flex: 1,
       padding: 20,
-      backgroundColor,
+      backgroundColor: theme.backgroundColor,
     },
     title: {
       fontSize: 28,
       fontWeight: 'bold',
       marginBottom: 24,
       textAlign: 'center',
-      color: primaryColor,
+      color: theme.primaryColor,
     },
     appointmentCard: {
       backgroundColor: 'white',
@@ -39,7 +38,7 @@ const useStyles = () => {
       fontSize: 20,
       fontWeight: '600',
       marginLeft: 8,
-      color: textColor,
+      color: theme.textColor,
     },
     divider: {
       height: 1,
@@ -67,7 +66,7 @@ const useStyles = () => {
     label: {
       fontSize: 16,
       marginLeft: 4,
-      color: textColor,
+      color: theme.textColor,
     },
     value: {
       fontWeight: '600',
@@ -95,7 +94,7 @@ const useStyles = () => {
       textAlign: 'center',
       fontSize: 18,
       fontWeight: '500',
-      color: textColor,
+      color: theme.textColor,
     },
     buttonContainer: {
       marginTop: 'auto',
@@ -126,9 +125,8 @@ const useStyles = () => {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor,
+      backgroundColor: theme.backgroundColor,
     },
   });
-};
 
-export default useStyles;
+export default createStyles;

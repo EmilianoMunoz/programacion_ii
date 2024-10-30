@@ -1,8 +1,13 @@
 import { StyleSheet } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
-
-const useStyles = () => {
-  return StyleSheet.create({
+const createStyles = (theme: {
+  backgroundColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  titleColor: string;
+  inputBackground: string;
+  borderColor: string;
+  textColor: string;
+}) => StyleSheet.create({
 
     container: {
       flex: 1,
@@ -13,13 +18,13 @@ const useStyles = () => {
       fontWeight: 'bold',
       marginBottom: 24,
       textAlign: 'center',
-      color: useThemeColor({}, 'titleColor'),
+      color: theme.titleColor,
     },
     subtitle: {
       fontSize: 18,
       fontWeight: '600',
       marginBottom: 16,
-      color: useThemeColor({}, 'text'),
+      color: theme.titleColor
     },
     dateSection: {
       marginBottom: 20,
@@ -29,7 +34,7 @@ const useStyles = () => {
       alignItems: 'center',
       padding: 16,
       marginVertical: 6,
-      backgroundColor: useThemeColor({}, 'background'),
+      backgroundColor: theme.backgroundColor,
       borderRadius: 12,
       elevation: 2,
       shadowColor: '#000',
@@ -40,13 +45,13 @@ const useStyles = () => {
     },
     selectedButton: {
       borderWidth: 2,
-      borderColor: useThemeColor({}, 'tint'),
-      backgroundColor: useThemeColor({}, 'buttonBackground'),
+      borderColor: theme.borderColor,
+      backgroundColor: theme.backgroundColor
     },
     dateText: {
       fontSize: 16,
       fontWeight: '500',
-      color: useThemeColor({}, 'text'),
+      color: theme.textColor,
     },
     timesContainer: {
       flex: 1,
@@ -58,7 +63,7 @@ const useStyles = () => {
       justifyContent: 'center',
       padding: 16,
       margin: 6,
-      backgroundColor: useThemeColor({}, 'icon'),
+      backgroundColor: theme.backgroundColor,
       borderRadius: 12,
       elevation: 2,
       shadowColor: '#000',
@@ -68,7 +73,7 @@ const useStyles = () => {
       gap: 8,
     },
     availableTime: {
-      backgroundColor: useThemeColor({}, 'tint'),
+      backgroundColor: theme.backgroundColor,
     },
     availableTimeButton: {
       backgroundColor: 'indigo',
@@ -96,7 +101,7 @@ const useStyles = () => {
     timeText: {
       fontSize: 16,
       fontWeight: '600',
-      color: useThemeColor({}, 'text'),
+      color: theme.textColor,
     },
     timeButtonsRow: {
       justifyContent: 'space-between',
@@ -112,7 +117,7 @@ const useStyles = () => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: useThemeColor({}, 'buttonBackground'),
+      backgroundColor: theme.backgroundColor,
       padding: 16,
       borderRadius: 12,
       elevation: 2,
@@ -123,17 +128,17 @@ const useStyles = () => {
       gap: 8,
     },
     disabledButton: {
-      backgroundColor: useThemeColor({}, 'tabIconDefault'),
+      backgroundColor: theme.backgroundColor,
     },
     weekButtonText: {
-      color: useThemeColor({}, 'buttonText'),
+      color: theme.buttonTextColor,
       fontSize: 16,
       fontWeight: '600',
     },
     currentAppointmentInfo: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: useThemeColor({}, 'buttonBackground'),
+      backgroundColor: theme.backgroundColor,
       padding: 16,
       borderRadius: 12,
       marginBottom: 20,
@@ -143,14 +148,38 @@ const useStyles = () => {
       flex: 1,
       fontSize: 16,
       fontWeight: '500',
-      color: useThemeColor({}, 'text'),
+      color: theme.textColor,
     },
     currentTimeSlot: {
       borderWidth: 2,
-      borderColor: useThemeColor({}, 'tint'),
-      backgroundColor: useThemeColor({}, 'buttonBackground'),
-    }
+      borderColor: theme.borderColor,
+      backgroundColor: theme.backgroundColor,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    errorText: {
+      fontSize: 16,
+      textAlign: 'center',
+      marginVertical: 20,
+      color: 'textColor',
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'indigo',
+      padding: 10,
+      borderRadius: 8,
+      marginTop: 20,
+    },
+    buttonText: {
+      color: 'white',
+      marginLeft: 8,
+      fontSize: 16,
+    },
   });
-};
 
-export default useStyles;
+export default createStyles;

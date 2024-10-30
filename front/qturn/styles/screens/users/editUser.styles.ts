@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
       fontSize: 16,
     },
     saveButton: {
-      backgroundColor: 'indigo', // Indigo-600
+      backgroundColor: 'indigo', 
       paddingVertical: 12,
       paddingHorizontal: 24,
       borderRadius: 8,
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
     },
     saveButtonDisabled: {
-      backgroundColor: '#6B7280', // Gray-500
+      backgroundColor: '#6B7280',
     },
     saveButtonText: {
       color: '#ffffff',

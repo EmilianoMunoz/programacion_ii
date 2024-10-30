@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { format, addDays, addMinutes, startOfWeek, parse, isPast } from 'date-fns';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import useStyles from '@/styles/screens/appointments/newAppointment.styles';
+import createStyles from '@/styles/screens/appointments/newAppointment.styles';
 import { DateSelector } from '@/components/appointments/dateSelector';
 import { TimeSelector } from '@/components/appointments/timeSelector';
 
@@ -27,7 +27,7 @@ interface WorkSchedule {
 
 const NewAppointmentScreen = () => {
   const router = useRouter();
-  const styles = useStyles();
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [currentWeek, setCurrentWeek] = useState<Date[]>([]);
@@ -39,8 +39,27 @@ const NewAppointmentScreen = () => {
   const [doctorId] = useState(24);
 
   const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const primaryColor = 'indigo';
+  const titleColor = useThemeColor({}, 'text');
+  const tintColor = useThemeColor({}, 'tint');
+  const buttonBackground = useThemeColor({}, 'buttonBackground');
+  const buttonTextColor = useThemeColor({}, 'buttonText');
+  const inputBackgroundColor = useThemeColor({}, 'inputBackground');
+  const textColor = useThemeColor({}, 'itemTextColor');
+  const borderColor = useThemeColor({}, 'itemBorderColor');
+  const warningText = useThemeColor({}, 'warningText');
+  const primaryColor = useThemeColor({}, 'primaryColor');
+
+  const styles = createStyles({
+    backgroundColor,
+    buttonBackground,
+    buttonTextColor,
+    titleColor,
+    inputBackground: inputBackgroundColor,
+    textColor,
+    borderColor,
+    warningText,
+    primaryColor,
+  });
 
   const API_URL = 'http://192.168.18.166:8080';
 
@@ -240,7 +259,7 @@ const NewAppointmentScreen = () => {
       });
       
       Alert.alert('Éxito', 'Turno creado exitosamente');
-      router.back();
+      router.push('/home');
     } catch (error: any) {
       const errorMessage = error.response?.data || 'No se pudo crear el turno';
       Alert.alert('Error', errorMessage);
@@ -272,51 +291,63 @@ const NewAppointmentScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        Solicitar nuevo turno
-      </Text>
-  
-      {hasExistingAppointment ? (
-        <View style={styles.warningCard}>
-          <MaterialIcons name="warning" size={24} color="#D97706" />
-          <Text style={styles.warningText}>
-            Ya tienes un turno activo. Debes cancelar tu turno actual antes de solicitar uno nuevo.
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.contentContainer}>
-          {selectedDate ? (
-            <View style={styles.dateSelectionContainer}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={() => setSelectedDate(null)}
-              >
-                <MaterialIcons name="arrow-back" size={24} />
-                <Text style={styles.backButtonText}>
-                  Elegir nueva fecha
-                </Text>
-              </TouchableOpacity>
-              <TimeSelector
+    <>
+      <Stack.Screen 
+        options={{
+          title: "Nuevo Turno",
+          headerStyle: {
+            backgroundColor: backgroundColor,
+          },
+          headerTintColor: 'black',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }} 
+      />
+
+      <View style={styles.container}>
+    
+        {hasExistingAppointment ? (
+          <View style={styles.warningCard}>
+            <MaterialIcons name="warning" size={24} color="#D97706" />
+            <Text style={styles.warningText}>
+              Ya tienes un turno activo. Debes cancelar tu turno actual antes de solicitar uno nuevo.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.contentContainer}>
+            {selectedDate ? (
+              <View style={styles.dateSelectionContainer}>
+                <TouchableOpacity 
+                  style={styles.backButton} 
+                  onPress={() => setSelectedDate(null)}
+                >
+                  <MaterialIcons name="arrow-back" size={24} />
+                  <Text style={styles.backButtonText}>
+                    Elegir nueva fecha
+                  </Text>
+                </TouchableOpacity>
+                <TimeSelector
+                  selectedDate={selectedDate}
+                  timeSlots={timeSlots}
+                  isLoading={isLoading}
+                  onTimeSelect={handleTimeSelect}
+                />
+              </View>
+            ) : (
+              <DateSelector
+                currentWeek={currentWeek}
                 selectedDate={selectedDate}
-                timeSlots={timeSlots}
-                isLoading={isLoading}
-                onTimeSelect={handleTimeSelect}
+                hasExistingAppointment={hasExistingAppointment}
+                isDateAvailable={isDateAvailable}
+                onDateSelect={handleDateSelect}
+                onWeekChange={changeWeek}
               />
-            </View>
-          ) : (
-            <DateSelector
-              currentWeek={currentWeek}
-              selectedDate={selectedDate}
-              hasExistingAppointment={hasExistingAppointment}
-              isDateAvailable={isDateAvailable}
-              onDateSelect={handleDateSelect}
-              onWeekChange={changeWeek}
-            />
-          )}
-        </View>
-      )}
-    </View>
+            )}
+          </View>
+        )}
+      </View>
+    </>
   );
 };
 

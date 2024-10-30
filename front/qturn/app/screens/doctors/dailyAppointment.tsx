@@ -106,8 +106,9 @@ const AppointmentCard: React.FC<{
       <View style={styles.patientContainer}>
         <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
         <View style={styles.patientInfo}>
-          <Text style={styles.patientName}>{appointment.patientName}</Text>
-          <Text style={styles.patientSurname}>{appointment.patientSurname}</Text>
+          <Text style={styles.patientName}>
+            {appointment.patientName} {appointment.patientSurname}
+          </Text>
           <Text style={styles.coverageText}>{appointment.patientCoverage}</Text>
           <Text style={[styles.statusText, { color: statusColor }]}>
             {statusText}
