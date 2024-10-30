@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, Alert, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { format, addDays, startOfWeek, isSameDay, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
-import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import styles from '@/styles/screens/doctors/dailyAppointment.styles'
+import styles from '@/styles/screens/doctors/dailyAppointment.styles';
+import apiClient from '@/services/apiClient';
 
 interface Appointment {
   id: number;
@@ -14,25 +14,10 @@ interface Appointment {
   patientName: string;
   patientSurname: string;
   patientCoverage: string;
-  status: AppointmentStatus;
 }
-
-type AppointmentStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
 
 const API_URL = 'http://192.168.18.166:8080';
 const PRIMARY_COLOR = 'indigo';
-
-const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  PENDING: '#4F46E5',
-  COMPLETED: '#10B981',
-  CANCELLED: '#EF4444'
-};
-
-const STATUS_TEXTS: Record<AppointmentStatus, string> = {
-  PENDING: 'Pendiente',
-  COMPLETED: 'Completado',
-  CANCELLED: 'Cancelado'
-};
 
 const getAuthToken = async (): Promise<string> => {
   const token = await SecureStore.getItemAsync('token');
@@ -43,21 +28,8 @@ const getAuthToken = async (): Promise<string> => {
 };
 
 const handleApiError = (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    const status = error.response?.status;
-    switch (status) {
-      case 401:
-        Alert.alert('Error', 'Sesión expirada. Por favor, inicie sesión nuevamente');
-        break;
-      case 403:
-        Alert.alert('Error', 'No tiene permisos para realizar esta acción');
-        break;
-      case 404:
-        Alert.alert('Info', 'No hay turnos programados para este día');
-        break;
-      default:
-        Alert.alert('Error', 'Error al conectar con el servidor');
-    }
+  if (error instanceof Error) {
+    Alert.alert('Error', error.message);
   } else {
     console.error('Error no relacionado con Axios:', error);
     Alert.alert('Error', 'Ocurrió un error inesperado');
@@ -88,36 +60,27 @@ const DateButton: React.FC<{
 const AppointmentCard: React.FC<{
   appointment: Appointment;
   onPress: (appointment: Appointment) => void;
-}> = React.memo(({ appointment, onPress }) => {
-  const statusColor = STATUS_COLORS[appointment.status];
-  const statusText = STATUS_TEXTS[appointment.status];
+}> = React.memo(({ appointment, onPress }) => (
+  <TouchableOpacity
+    style={styles.appointmentCard}
+    onPress={() => onPress(appointment)}
+  >
+    <View style={styles.timeContainer}>
+      <Text style={styles.timeText}>
+        {format(new Date(appointment.time), 'HH:mm')}
+      </Text>
+    </View>
 
-  return (
-    <TouchableOpacity
-      style={styles.appointmentCard}
-      onPress={() => onPress(appointment)}
-    >
-      <View style={styles.timeContainer}>
-        <Text style={styles.timeText}>
-          {format(new Date(appointment.time), 'HH:mm')}
+    <View style={styles.patientContainer}>
+      <View style={styles.patientInfo}>
+        <Text style={styles.patientName}>
+          {appointment.patientName} {appointment.patientSurname}
         </Text>
+        <Text style={styles.coverageText}>{appointment.patientCoverage}</Text>
       </View>
-
-      <View style={styles.patientContainer}>
-        <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
-        <View style={styles.patientInfo}>
-          <Text style={styles.patientName}>
-            {appointment.patientName} {appointment.patientSurname}
-          </Text>
-          <Text style={styles.coverageText}>{appointment.patientCoverage}</Text>
-          <Text style={[styles.statusText, { color: statusColor }]}>
-            {statusText}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-});
+    </View>
+  </TouchableOpacity>
+));
 
 const useAuth = () => {
   const [doctorId, setDoctorId] = useState<number | null>(null);
@@ -143,97 +106,40 @@ const useAuth = () => {
   return { doctorId };
 };
 
-const useAuthenticatedApi = () => {
-  const handleAuthenticatedRequest = async <T,>(
-    requestFn: (token: string) => Promise<T>
-  ): Promise<T> => {
-    try {
-      const token = await getAuthToken();
-      return await requestFn(token);
-    } catch (error) {
-      if (error instanceof Error && error.message === 'No authentication token found') {
-        Alert.alert('Error', 'Por favor, inicie sesión nuevamente');
-      }
-      throw error;
-    }
-  };
-
-  return { handleAuthenticatedRequest };
-};
-
 const useAppointments = (doctorId: number | null) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { handleAuthenticatedRequest } = useAuthenticatedApi();
 
   const fetchAppointments = useCallback(async (date: Date) => {
     if (!doctorId) return;
     
     setIsLoading(true);
     try {
-      await handleAuthenticatedRequest(async (token) => {
-        const formattedDate = format(date, 'yyyy-MM-dd');
-        const response = await axios.get(
-          `${API_URL}/appointments/doctor/${doctorId}/appointments`, 
-          {
-            params: { date: formattedDate },
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+      const token = await getAuthToken();
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const response = await apiClient.get(
+        `${API_URL}/appointments/doctor/${doctorId}/appointments`, 
+        {
+          params: { date: formattedDate },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        );
-        
-        setAppointments(Array.isArray(response.data) ? response.data : []);
-      });
+        }
+      );
+
+      setAppointments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       handleApiError(error);
     } finally {
       setIsLoading(false);
     }
-  }, [doctorId, handleAuthenticatedRequest]);
-
-  const updateAppointmentStatus = async (appointmentId: number, newStatus: AppointmentStatus, date: Date) => {
-    try {
-      await handleAuthenticatedRequest(async (token) => {
-        await axios.patch(
-          `${API_URL}/appointments/${appointmentId}/status`,
-          { status: newStatus },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      });
-      
-      Alert.alert('Éxito', 'Estado del turno actualizado correctamente');
-      fetchAppointments(date);
-    } catch (error) {
-      console.error('Error al actualizar el estado:', error);
-      Alert.alert('Error', 'No se pudo actualizar el estado del turno');
-    }
-  };
-
-  const cancelAppointment = async (appointmentId: number, date: Date) => {
-    try {
-      await handleAuthenticatedRequest(async (token) => {
-        await axios.delete(
-          `${API_URL}/appointments/${appointmentId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      });
-      
-      Alert.alert('Éxito', 'El turno ha sido cancelado.');
-      fetchAppointments(date);
-    } catch (error) {
-      console.error('Error al cancelar el turno:', error);
-      Alert.alert('Error', 'No se pudo cancelar el turno. Intente nuevamente.');
-    }
-  };
+  }, [doctorId]);
 
   return {
     appointments,
     isLoading,
     fetchAppointments,
-    updateAppointmentStatus,
-    cancelAppointment
   };
 };
 
@@ -249,8 +155,6 @@ const DoctorAppointmentsScreen: React.FC = () => {
     appointments,
     isLoading,
     fetchAppointments,
-    updateAppointmentStatus,
-    cancelAppointment
   } = useAppointments(doctorId);
 
   useEffect(() => {
@@ -271,22 +175,10 @@ const DoctorAppointmentsScreen: React.FC = () => {
       'Detalles del Turno',
       `Paciente: ${appointment.patientName} ${appointment.patientSurname}\n` +
       `Cobertura: ${appointment.patientCoverage}\n` +
-      `Horario: ${format(new Date(appointment.time), 'HH:mm')}\n` +
-      `Estado: ${STATUS_TEXTS[appointment.status]}`,
-      [
-        { text: 'Cerrar' },
-        {
-          text: 'Marcar Completado',
-          onPress: () => updateAppointmentStatus(appointment.id, 'COMPLETED', selectedDate),
-        },
-        {
-          text: 'Cancelar Turno',
-          onPress: () => cancelAppointment(appointment.id, selectedDate),
-          style: 'destructive',
-        },
-      ]
+      `Horario: ${format(new Date(appointment.time), 'HH:mm')}`,
+      [{ text: 'Cerrar' }]
     );
-  }, [selectedDate, updateAppointmentStatus, cancelAppointment]);
+  }, [selectedDate]);
 
   const changeWeek = useCallback((increment: number) => {
     setCurrentWeek(prev => {
@@ -376,7 +268,6 @@ const DoctorAppointmentsScreen: React.FC = () => {
     </View>
   );
 };
-
 
 export default DoctorAppointmentsScreen;
 

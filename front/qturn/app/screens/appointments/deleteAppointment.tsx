@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import axios from 'axios';
+import apiClient from '@/services/apiClient';
 import * as SecureStore from 'expo-secure-store';
 import { router, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -43,22 +43,10 @@ const CancelAppointmentScreen: React.FC = () => {
   const fetchViewAppointment = async () => {
     setLoading(true);
     try {
-      const [token, userId] = await Promise.all([
-        SecureStore.getItemAsync('token'),
-        SecureStore.getItemAsync('userId'),
-      ]);
-
-      if (!token || !userId) {
-        throw new Error('No token or user ID found');
-      }
-
-      const response = await axios.get(
-        `http://192.168.18.166:8080/appointments/appointment/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
+      const userId = await SecureStore.getItemAsync('userId');
+      if (!userId) throw new Error('No se encontró el ID del usuario');
+  
+      const response = await apiClient.get(`/appointments/appointment/${userId}`);
       setAppointment(response.data);
       setError(null);
     } catch (axiosError: any) {
@@ -79,7 +67,7 @@ const CancelAppointmentScreen: React.FC = () => {
       Alert.alert("Información", "No hay ningún turno para cancelar");
       return;
     }
-
+  
     Alert.alert(
       "Confirmar Cancelación",
       "¿Está seguro que desea cancelar este turno?",
@@ -90,15 +78,7 @@ const CancelAppointmentScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              const token = await SecureStore.getItemAsync('token');
-              if (!token) {
-                throw new Error('No se encontró el token de autenticación');
-              }
-
-              await axios.delete(
-                `http://192.168.18.166:8080/appointments/${appointment.id}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
+              await apiClient.delete(`/appointments/${appointment.id}`);
               Alert.alert("Éxito", "Turno cancelado con éxito");
               router.back();
             } catch (axiosError: any) {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import axios from 'axios';
+import apiClient from '@/services/apiClient';
 import * as SecureStore from 'expo-secure-store';
-import styles from '@/styles/screens/doctors/doctorSchedule.styles'
+import styles from '@/styles/screens/doctors/doctorSchedule.styles';
 
 const WEEKDAYS = [
   { id: 1, name: 'Lunes' },
@@ -18,6 +18,14 @@ const TIME_SLOTS = [
   '18:00', '19:00', '20:00'
 ];
 
+const appointmentIdsByDayOfWeek = {
+  1: 7, 
+  2: 10,
+  3: 8,
+  4: 9,
+  5: 6
+} as const;
+
 interface DaySchedule {
   enabled: boolean;
   startTime: string;
@@ -31,7 +39,6 @@ const DoctorScheduleScreen = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [schedules, setSchedules] = useState<{ [key: number]: DaySchedule }>({});
 
-  // Inicializar el estado para cada día
   useEffect(() => {
     const initialSchedules: { [key: number]: DaySchedule } = {};
     WEEKDAYS.forEach(day => {
@@ -47,17 +54,14 @@ const DoctorScheduleScreen = () => {
 
   const fetchDoctorData = async () => {
     try {
-      const [id, token] = await Promise.all([
-        SecureStore.getItemAsync('doctor_id'),
-        SecureStore.getItemAsync('token')
-      ]);
+      const id = await SecureStore.getItemAsync('doctor_id');
+      const token = await SecureStore.getItemAsync('token');
       
       if (!id || !token) {
         Alert.alert('Error', 'Información de autenticación incompleta. Por favor, inicie sesión nuevamente.');
         return;
       }
-      
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
       setDoctorId(id);
     } catch (error) {
       console.error('Error al recuperar datos del doctor:', error);
@@ -98,19 +102,12 @@ const DoctorScheduleScreen = () => {
     }
 
     setIsSaving(true);
-    const token = await SecureStore.getItemAsync('token');
     
-    if (!token) {
-      Alert.alert('Error', 'No se encontró el token de autenticación');
-      setIsSaving(false);
-      return;
-    }
-
     try {
-      // Filtrar solo los días habilitados
       const enabledDays = Object.entries(schedules)
         .filter(([_, schedule]) => schedule.enabled)
         .map(([dayId, schedule]) => ({
+          appointmentId: appointmentIdsByDayOfWeek[parseInt(dayId, 10) as keyof typeof appointmentIdsByDayOfWeek],
           doctorId: parseInt(doctorId, 10),
           dayOfWeek: parseInt(dayId, 10),
           startTime: schedule.startTime,
@@ -124,14 +121,8 @@ const DoctorScheduleScreen = () => {
         return;
       }
 
-      // Guardar cada día habilitado
       await Promise.all(enabledDays.map(schedule => 
-        axios.post('http://192.168.18.166:8080/work-schedules', schedule, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+        apiClient.put(`/work-schedules/${schedule.appointmentId}`, schedule)
       ));
 
       Alert.alert('Éxito', 'Horarios guardados con éxito');

@@ -52,7 +52,7 @@ const createStyles = (theme: {
       width: '100%',
       alignItems: 'center',
       backgroundColor: theme.logoutButtonColor, 
-      marginTop: 30, // Separación extra para el botón de logout
+      marginTop: 30,
     },
     logoutButtonText: {
       color: theme.logoutButtonTextColor,

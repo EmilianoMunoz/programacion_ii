@@ -1,18 +1,7 @@
 import React, { useEffect, useState, useLayoutEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  ActivityIndicator, 
-  TextInput, 
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  KeyboardAvoidingView,
-  Platform
-} from 'react-native';
+import { View, Text, ActivityIndicator, TextInput, TouchableOpacity,ScrollView,Alert, KeyboardAvoidingView, Platform} from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import apiClient from '@/services/apiClient'; 
 import { useThemeColor } from '@/hooks/useThemeColor';
 import styles from '@/styles/screens/users/editUser.styles';
 
@@ -31,8 +20,6 @@ const INITIAL_USER_STATE: UserData = {
   phone: '',
   coverage: '',
 };
-
-const API_BASE_URL = 'http://192.168.18.166:8080';
 
 const EditUserScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
@@ -54,18 +41,12 @@ const EditUserScreen: React.FC = () => {
   const fetchUserData = useCallback(async () => {
     setLoading(true);
     try {
-      const token = await SecureStore.getItemAsync('token');
-      if (!token) throw new Error('No token found');
-
       const userId = Number(id);
       if (isNaN(userId)) {
         throw new Error('ID no válido');
       }
 
-      const response = await axios.get(`${API_BASE_URL}/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      const response = await apiClient.get(`/users/${userId}`);
       setUserData(response.data);
     } catch (err) {
       console.error('Error fetching user data:', err);
@@ -82,15 +63,8 @@ const EditUserScreen: React.FC = () => {
   const handleUpdateUser = async () => {
     try {
       setIsSaving(true);
-      const token = await SecureStore.getItemAsync('token');
-      if (!token) throw new Error('No token found');
 
-      await axios.put(
-        `${API_BASE_URL}/users/${id}`,
-        userData,
-        { headers: { Authorization: `Bearer ${token}` }}
-      );
-
+      await apiClient.put(`/users/${id}`, userData);
       Alert.alert(
         'Éxito',
         'Usuario actualizado correctamente',
@@ -178,6 +152,5 @@ const EditUserScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
-
 
 export default EditUserScreen;

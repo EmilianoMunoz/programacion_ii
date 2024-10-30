@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import axios from 'axios';
+import apiClient from '@/services/apiClient';
 import * as SecureStore from 'expo-secure-store';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import styles from '@/styles/screens/users/createUser.styles';
+import axios from 'axios';
 
 const CreateUserScreen: React.FC = () => {
   const [name, setName] = useState('');
@@ -29,10 +30,9 @@ const CreateUserScreen: React.FC = () => {
       return;
     }
 
-
     try {
-      const response = await axios.post(
-        'http://192.168.18.166:8080/register',
+      const response = await apiClient.post(
+        '/register', 
         {
           name,
           surname,
@@ -55,7 +55,9 @@ const CreateUserScreen: React.FC = () => {
     } catch (err) {
       console.error('Error creating user:', err);
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Error al crear el usuario');
+        setError(err.response?.data.message || 'Error al crear el usuario');
+      } else if (err instanceof Error) {
+        setError(err.message); 
       } else {
         setError('Error inesperado');
       }
@@ -93,7 +95,7 @@ const CreateUserScreen: React.FC = () => {
         style={[styles.input, { color: textColor, backgroundColor: backgroundColor }]}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry // Añadido para ocultar la contraseña
+        secureTextEntry 
       />
       <Text style={[styles.label, { color: textColor }]}>Teléfono:</Text>
       <TextInput

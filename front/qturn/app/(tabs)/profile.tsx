@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import UserInfo from '../../components/users/carduser';
-import axios from 'axios';
+import apiClient from '@/services/apiClient';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import createStyles from '@/styles/(tabs)/profile.styles';
@@ -16,7 +16,6 @@ interface UserInfoProps {
   dob: string;
 }
 
-
 const Profile: React.FC = () => {
   const backgroundColor = useThemeColor({}, 'background');
   const titleColor = useThemeColor({}, 'text');
@@ -24,7 +23,7 @@ const Profile: React.FC = () => {
   const buttonBackground = useThemeColor({}, 'buttonBackground');
   const buttonTextColor = useThemeColor({}, 'buttonText');
   const inputBackgroundColor = useThemeColor({}, 'text');
-  const buttonColor = useThemeColor({}, 'buttonColor'); // Asegúrate de obtenerlo aquí
+  const buttonColor = useThemeColor({}, 'buttonColor');
 
   const styles = createStyles({
     backgroundColor,
@@ -49,11 +48,7 @@ const Profile: React.FC = () => {
         const userId = await SecureStore.getItemAsync('userId');
         if (!userId) throw new Error('No userId found');
 
-        const response = await axios.get(`http://192.168.18.166:8080/users/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await apiClient.get(`/users/${userId}`);
 
         if (response.status === 200) {
           setUserData(response.data);
@@ -110,6 +105,5 @@ const Profile: React.FC = () => {
     </View>
   );
 };
-
 
 export default Profile;

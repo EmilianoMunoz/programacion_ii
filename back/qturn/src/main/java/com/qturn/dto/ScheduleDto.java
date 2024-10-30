@@ -11,5 +11,6 @@ public class ScheduleDto {
     private LocalTime startTime;
     private LocalTime endTime;
     private Integer slotDuration;
-    private Boolean isActive;
+    private Boolean isActive = true;
+    
 }

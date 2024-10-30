@@ -3,12 +3,12 @@ import { View, Text, Alert, ActivityIndicator, TouchableOpacity } from 'react-na
 import { format, addDays, addMinutes, startOfWeek, parse, isPast } from 'date-fns';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import createStyles from '@/styles/screens/appointments/newAppointment.styles';
 import { DateSelector } from '@/components/appointments/dateSelector';
 import { TimeSelector } from '@/components/appointments/timeSelector';
+import apiClient from '@/services/apiClient';
 
 interface TimeSlot {
   time: string;
@@ -61,8 +61,6 @@ const NewAppointmentScreen = () => {
     primaryColor,
   });
 
-  const API_URL = 'http://192.168.18.166:8080';
-
   const generateCurrentWeek = (baseDate: Date) => {
     const start = startOfWeek(baseDate, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -81,12 +79,9 @@ const NewAppointmentScreen = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await axios.get(
-        `${API_URL}/work-schedules/doctor/${doctorId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const response = await apiClient.get(`/work-schedules/doctor/${doctorId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       if (response.data && Array.isArray(response.data)) {
         setWorkSchedule(response.data);
@@ -129,12 +124,9 @@ const NewAppointmentScreen = () => {
       const token = await SecureStore.getItemAsync('token');
       if (!token) throw new Error('No se encontró el token');
 
-      const response = await axios.get(
-        `${API_URL}/appointments/appointment/${patId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const response = await apiClient.get(`/appointments/appointment/${patId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       setHasExistingAppointment(!!response.data);
       if (response.data) {
@@ -162,7 +154,6 @@ const NewAppointmentScreen = () => {
     }
 
     const dayOfWeek = date.getDay() || 7;
-    const dateStr = format(date, 'yyyy-MM-dd');
     
     const isAvailable = workSchedule.some(schedule => 
       schedule.dayOfWeek === dayOfWeek && schedule.isActive === true
@@ -203,7 +194,7 @@ const NewAppointmentScreen = () => {
         return;
       }
 
-      const response = await axios.get(`${API_URL}/appointments/available-times`, {
+      const response = await apiClient.get(`/appointments/available-times`, {
         params: { date: formattedDate, doctorId }
       });
       
@@ -252,7 +243,7 @@ const NewAppointmentScreen = () => {
     appointmentDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
 
     try {
-      await axios.post(`${API_URL}/appointments`, {
+      await apiClient.post(`/appointments`, {
         doctorId,
         patientId,
         time: appointmentDateTime.toISOString()

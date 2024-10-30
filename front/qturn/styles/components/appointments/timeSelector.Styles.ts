@@ -1,7 +1,7 @@
 import { StyleSheet, Dimensions } from "react-native";
 
 const screenWidth = Dimensions.get('window').width;
-const buttonWidth = (screenWidth - 64) / 2; // Ajustado para mejor distribución
+const buttonWidth = (screenWidth - 64) / 2;
 
 const createStyles = (theme: {
   backgroundColor: string;

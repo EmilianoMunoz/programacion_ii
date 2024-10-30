@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { format, addDays, startOfWeek, isSameDay, isPast, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import axios, { AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import createStyles from '@/styles/screens/appointments/editAppointment.styles';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import apiClient from '@/services/apiClient';
 
 interface TimeSlot {
   time: string;
@@ -17,7 +17,7 @@ interface TimeSlot {
 interface Appointment {
   id: string;
   time: string;
-  doctorId: string; 
+  doctorId: string;
   patientId: string;
 }
 
@@ -25,7 +25,6 @@ interface ApiError {
   message: string;
   status: number;
 }
-
 
 const EditAppointmentScreen = () => {
   const router = useRouter();
@@ -38,32 +37,33 @@ const EditAppointmentScreen = () => {
   const [initializing, setInitializing] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const DOCTOR_ID = 24;
 
   const backgroundColor = useThemeColor({}, 'background');
   const titleColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const buttonBackground = useThemeColor({}, 'buttonBackground');
   const buttonTextColor = useThemeColor({}, 'buttonText');
-  const inputBackgroundColor = useThemeColor({}, 'inputBackground'); 
-  const borderColor = useThemeColor({}, 'itemBorderColor'); 
+  const inputBackgroundColor = useThemeColor({}, 'inputBackground');
+  const borderColor = useThemeColor({}, 'itemBorderColor');
   const textColor = useThemeColor({}, 'itemTextColor');
-  
+
   const styles = createStyles({
     backgroundColor,
     buttonBackground,
     buttonTextColor,
     titleColor,
     inputBackground: inputBackgroundColor,
-    borderColor,     
-    textColor,        
-    });
-
-  const API_URL = 'http://192.168.18.166:8080';
+    borderColor,
+    textColor,
+  });
 
   const generateCurrentWeek = (baseDate: Date): Date[] => {
     const start = startOfWeek(baseDate, { weekStartsOn: 1 });
-    return Array.from({ length: 5 }, (_, i) => addDays(start, i));
+    return Array.from({ length: 5 }, (_, i) => addDays(start, i)); 
   };
+  
 
   useEffect(() => {
     const today = new Date();
@@ -75,26 +75,25 @@ const EditAppointmentScreen = () => {
     try {
       const storedToken = await SecureStore.getItemAsync('token');
       const storedUserId = await SecureStore.getItemAsync('userId');
-  
-      if (!storedToken || !storedUserId) {
+      const storedRole = await SecureStore.getItemAsync('role');
+
+      if (!storedToken || !storedUserId || !storedRole) {
         setError('No se encontraron las credenciales necesarias');
         return;
       }
-  
+
       setToken(storedToken);
       setUserId(storedUserId);
-  
+      setRole(storedRole);
+
       try {
-        const response = await axios.get<Appointment>(
-          `${API_URL}/appointments/appointment/${storedUserId}`,
+        const response = await apiClient.get<Appointment>(
+          `/appointments/appointment/${storedUserId}`,
           {
-            headers: { 
-              Authorization: `Bearer ${storedToken}`,
-              'Content-Type': 'application/json'
-            }
+            headers: { Authorization: `Bearer ${storedToken}` }
           }
         );
-  
+
         if (response.data) {
           setCurrentAppointment(response.data);
           const appointmentDate = parseISO(response.data.time);
@@ -102,25 +101,23 @@ const EditAppointmentScreen = () => {
           setCurrentWeek(generateCurrentWeek(appointmentDate));
           await fetchTimeSlots(appointmentDate);
         }
-      } catch (error) {
-        const axiosError = error as AxiosError<ApiError>;
-        
-        if (axiosError.response?.status === 404) {
-          Alert.alert(
-            'Información',
-            'No tenés ningún turno programado',
-            [
-              { 
-                text: 'OK', 
-                onPress: () => router.back() 
-              }
-            ]
-          );
-          return;
+      } catch (error: unknown) {
+        if (error instanceof Error && 'response' in error) {
+          const apiError = error as unknown as ApiError;
+          if (apiError.status === 404) {
+            Alert.alert(
+              'Información',
+              'No tenés ningún turno programado',
+              [{ text: 'OK', onPress: () => router.back() }]
+            );
+            return;
+          }
+          console.error('Error al obtener el turno:', apiError.message);
+          setError('No se pudo cargar la información del turno');
+        } else {
+          console.error('Error inesperado:', error);
+          setError('Ocurrió un error inesperado');
         }
-        
-        console.error('Error al obtener el turno:', axiosError.response?.data || axiosError.message);
-        setError('No se pudo cargar la información del turno');
       }
     } catch (error) {
       console.error('Error en la inicialización:', error);
@@ -132,39 +129,35 @@ const EditAppointmentScreen = () => {
 
   const fetchTimeSlots = async (date: Date) => {
     if (!token || !currentAppointment) return;
-    
+
     setIsLoading(true);
     try {
       const formattedDate = format(date, 'yyyy-MM-dd');
-      const response = await axios.get<string[]>(`${API_URL}/appointments/available-times`, {
-        params: { 
+      const response = await apiClient.get<string[]>(`/appointments/available-times`, {
+        params: {
           date: formattedDate,
           excludeAppointmentId: currentAppointment.id,
           doctorId: currentAppointment.doctorId
         },
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const allTimeSlots = generateTimeSlots();
       const availableTimes = new Set(response.data);
-      
+
       if (currentAppointment && isSameDay(date, parseISO(currentAppointment.time))) {
         const currentTime = format(parseISO(currentAppointment.time), 'HH:mm');
         availableTimes.add(currentTime);
       }
-      
+
       const slots = allTimeSlots.map(time => ({
         time,
         isAvailable: availableTimes.has(time)
       }));
-      
+
       setTimeSlots(slots);
     } catch (error) {
-      const axiosError = error as AxiosError<ApiError>;
-      console.error('Error al obtener horarios:', axiosError.response?.data || axiosError.message);
+      console.error('Error al obtener horarios:', error);
       Alert.alert('Error', 'No se pudieron obtener los horarios disponibles');
     } finally {
       setIsLoading(false);
@@ -186,7 +179,7 @@ const EditAppointmentScreen = () => {
   };
 
   const handleTimeSelect = async (timeSlot: TimeSlot) => {
-    if (!selectedDate || !currentAppointment || !timeSlot.isAvailable || !userId || !token) {
+    if (!selectedDate || !currentAppointment || !timeSlot.isAvailable || !userId || !token || !role) {
       Alert.alert('Error', 'Faltan datos necesarios para actualizar el turno');
       return;
     }
@@ -197,44 +190,30 @@ const EditAppointmentScreen = () => {
       appointmentDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
 
       const requestBody = {
-        time: appointmentDateTime.toISOString()
+        time: appointmentDateTime.toISOString(),
+        doctorId: DOCTOR_ID,
       };
 
-      await axios.put(
-        `${API_URL}/appointments/${currentAppointment.id}`,
+      await apiClient.put(
+        `/appointments/${currentAppointment.id}`,
         requestBody,
         {
           params: {
             userId: userId,
-            role: 'PATIENT'
+            role: role 
           },
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
-      
+
       Alert.alert(
-        'Éxito', 
+        'Éxito',
         'Turno actualizado exitosamente',
-        [
-          { text: 'OK', onPress: () => router.back() }
-        ]
+        [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
-      const axiosError = error as AxiosError;
-      console.error('Error completo:', {
-        message: axiosError.message,
-        response: axiosError.response?.data,
-        status: axiosError.response?.status
-      });
-      
-      const errorMessage = typeof axiosError.response?.data === 'string' 
-        ? axiosError.response.data 
-        : 'No se pudo actualizar el turno. Por favor, intentá más tarde.';
-      
-      Alert.alert('Error', errorMessage);
+      console.error('Error al actualizar el turno:', error);
+      Alert.alert('Error', 'No se pudo actualizar el turno. Por favor, intentá más tarde.');
     }
   };
 
@@ -243,7 +222,7 @@ const EditAppointmentScreen = () => {
     if (increment < 0 && isPast(newWeek[0])) return;
     setCurrentWeek(newWeek);
     setSelectedDate(null);
-    setTimeSlots([]);
+    setTimeSlots([]); 
   };
 
   if (initializing) {
@@ -259,13 +238,9 @@ const EditAppointmentScreen = () => {
       <Stack.Screen 
         options={{
           title: "Modificar Turno",
-          headerStyle: {
-            backgroundColor: backgroundColor,
-          },
+          headerStyle: { backgroundColor: backgroundColor },
           headerTintColor: textColor,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerTitleStyle: { fontWeight: 'bold' },
         }} 
       />
       
@@ -280,80 +255,53 @@ const EditAppointmentScreen = () => {
         )}
 
         <View style={styles.dateSection}>
-          <Text style={styles.subtitle}>
-            Seleccione una nueva fecha:
-          </Text>
-          
+          <Text style={styles.subtitle}>Seleccione una nueva fecha:</Text>
           <FlatList
-            data={currentWeek}
+            data={currentWeek.filter(item => item !== null)}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[
-                  styles.dateButton,
-                  selectedDate && isSameDay(selectedDate, item) && styles.selectedButton
-                ]}
+                style={[styles.dateButton, isSameDay(item, selectedDate!) && styles.selectedDateButton]}
                 onPress={() => handleDateSelect(item)}
               >
-                <MaterialIcons 
-                  name="event" 
-                  size={24} 
-                  color={selectedDate && isSameDay(selectedDate, item) ? 'indigo' : '#000'} 
-                />
-                <Text style={[
-                  styles.dateText,
-                  selectedDate && isSameDay(selectedDate, item) ? { color: 'indigo' } : null
-                ]}>
-                  {format(item, 'eeee, dd MMMM', { locale: es })}
-                </Text>
+                <Text style={styles.dateText}>{format(item, 'EEEE dd', { locale: es })}</Text>
               </TouchableOpacity>
             )}
-            keyExtractor={(item) => item.toISOString()}
+            horizontal
+            keyExtractor={(_, index) => index.toString()}
           />
+          
+          <View style={styles.navigationButtons}>
+            <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.navigationButton}>
+              <Text style={styles.navigationButtonText}>Anterior</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => changeWeek(1)} style={styles.navigationButton}>
+              <Text style={styles.navigationButtonText}>Siguiente</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {selectedDate && (
-          <View style={styles.timesContainer}>
-            <Text style={styles.subtitle}>
-              Horarios disponibles:
-            </Text>
-            
-            {isLoading ? (
-              <ActivityIndicator size="large" color="indigo" />
-            ) : (
-              <FlatList
-                data={timeSlots}
-                renderItem={({ item: timeSlot }) => {
-                  const isPastTime = selectedDate && 
-                    isPast(new Date(selectedDate?.toISOString().split('T')[0] + 'T' + timeSlot.time));
+        <View style={styles.timeSlotsContainer}>
+          <Text style={styles.subtitle}>Horarios disponibles:</Text>
+          {isLoading ? (
+            <ActivityIndicator size="large" color="indigo" />
+          ) : (
+            <FlatList
+              data={timeSlots}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.timeSlotButton, item.isAvailable ? styles.availableSlot : styles.unavailableSlot]}
+                  onPress={() => handleTimeSelect(item)}
+                  disabled={!item.isAvailable}
+                >
+                  <Text style={styles.timeSlotText}>{item.time}</Text>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.time}
+            />
+          )}
+        </View>
 
-                  const isCurrentTime = currentAppointment && 
-                    format(parseISO(currentAppointment.time), 'HH:mm') === timeSlot.time;
-
-                  const isAvailableAndCurrent = timeSlot.isAvailable || isCurrentTime;
-
-                  return (
-                    <TouchableOpacity
-                      style={[
-                        styles.timeButton,
-                        isAvailableAndCurrent && !isPastTime ? styles.availableTimeButton : styles.unavailableTimeButton
-                      ]}
-                      disabled={!isAvailableAndCurrent || isPastTime}
-                      onPress={() => handleTimeSelect(timeSlot)}
-                    >
-                      <Text style={[
-                        styles.timeText,
-                        isAvailableAndCurrent ? styles.availableTimeText : styles.unavailableTimeText
-                      ]}>
-                        {timeSlot.time}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }}
-                keyExtractor={(item) => item.time}
-              />
-            )}
-          </View>
-        )}
+        {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
     </>
   );

@@ -1,12 +1,12 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { View, ActivityIndicator, Alert, TouchableOpacity, Text } from 'react-native';
-import axios from 'axios';
+import apiClient from '@/services/apiClient';
 import { useAuth } from '@/authcontext'; 
 import * as SecureStore from 'expo-secure-store';
 import UserList from '@/components/users/userlist';
 import { useNavigation, router } from 'expo-router';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import styles from '@/styles/screens/users/listUser.styles'
+import styles from '@/styles/screens/users/listUser.styles';
 
 const PatientList: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -30,14 +30,7 @@ const PatientList: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const token = await SecureStore.getItemAsync('token');
-      if (!token) throw new Error('No token found');
-
-      const response = await axios.get('http://192.168.18.166:8080/users/all', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get('/users/all');
 
       if (response.status === 200) {
         setUsers(response.data);

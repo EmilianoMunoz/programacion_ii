@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
       fontWeight: '600',
     },
     errorText: {
-      color: '#EF4444', // Red-500
+      color: '#EF4444',
       fontSize: 16,
       textAlign: 'center',
       marginBottom: 16,

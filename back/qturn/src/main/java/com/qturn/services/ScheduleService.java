@@ -27,7 +27,7 @@ public class ScheduleService {
         validateSlotDuration(workScheduleDTO.getSlotDuration(), workScheduleDTO.getStartTime(), workScheduleDTO.getEndTime());
         
         ScheduleModel workSchedule = workScheduleMapper.toEntity(workScheduleDTO);
-        workSchedule.setIsActive(true); // Establecer explícitamente si es necesario
+        workSchedule.setIsActive(true);
     
         workSchedule = workScheduleRepository.save(workSchedule);
         return workScheduleMapper.toDTO(workSchedule);

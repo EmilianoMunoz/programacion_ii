@@ -55,7 +55,6 @@ public class ScheduleController {
         return ResponseEntity.ok(workScheduleService.getScheduleById(scheduleId));
     }
 
-    // Manejadores de excepciones
     @ExceptionHandler(AppException.class)
     public ResponseEntity<String> handleAppException(AppException e) {
         return new ResponseEntity<>(e.getMessage(), e.getStatus());

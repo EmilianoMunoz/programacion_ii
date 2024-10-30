@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import {View, TextInput, Text, Pressable, Image, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform} from 'react-native';
-import axios from 'axios';
+import { View, TextInput, Text, Pressable, Image, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import apiClient from '@/services/apiClient';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { router } from 'expo-router';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '@/authcontext';
 import createStyles from '@/styles/index.styles';
+import axios from 'axios';
+
 
 interface LoginCredentials {
   email: string;
@@ -44,7 +46,7 @@ const LoginScreen: React.FC = () => {
     buttonText: buttonTextColor,
     buttonBackground: buttonBackground,
   };
-  
+
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',
@@ -53,7 +55,6 @@ const LoginScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { login } = useAuth();
-
 
   const handleCredentialChange = (field: keyof LoginCredentials) => (value: string) => {
     setCredentials(prev => ({ ...prev, [field]: value }));
@@ -92,7 +93,6 @@ const LoginScreen: React.FC = () => {
 
   const saveUserData = async (userData: any) => {
     try {
-      
       const { token, id, name, surname, email, role } = userData;
       
       const baseItems = {
@@ -112,23 +112,11 @@ const LoginScreen: React.FC = () => {
 
       if (role === 'DOCTOR') {
         await SecureStore.setItemAsync('doctor_id', id.toString());
-        
       } else if (role === 'PATIENT') {
         await SecureStore.setItemAsync('patient_id', id.toString());
-      
       }
 
       await SecureStore.setItemAsync('userData', JSON.stringify(userData));
-
-      const verificationPromises = [
-        SecureStore.getItemAsync('token'),
-        SecureStore.getItemAsync(role === 'DOCTOR' ? 'doctor_id' : 'patient_id'),
-        SecureStore.getItemAsync('userData'),
-      ];
-
-      const [verifiedToken, verifiedId, verifiedUserData] = await Promise.all(verificationPromises);
-      
-     
     } catch (error) {
       console.error('Error al guardar datos de usuario:', error);
       throw error;
@@ -151,43 +139,29 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async (testCredentials?: LoginCredentials) => {
     const loginData = testCredentials || credentials;
-    
+
     if (!testCredentials && !validateCredentials()) return;
 
     setIsLoading(true);
     try {
       await clearAllData();
 
-      const response = await axios.post(
-        'http://192.168.18.166:8080/login',
-        loginData,
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-
+      const response = await apiClient.post('/login', loginData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
       if (response.status === 200 && response.data) {
         if (!response.data.id || !response.data.role) {
           throw new Error('Datos de usuario incompletos en la respuesta');
         }
 
-
         await saveUserData(response.data);
-        
-        if (response.data.role === 'DOCTOR') {
-          const storedDoctorId = await SecureStore.getItemAsync('doctor_id');
-          if (!storedDoctorId) {
-            throw new Error('Error al guardar ID del doctor');
-          }
-        }
-
         await login(response.data);
         handleNavigation(response.data.role);
       }
     } catch (error) {
       console.error('Error detallado:', error);
-      
+
       const errorMessage = axios.isAxiosError(error)
         ? error.response?.data?.message || error.message
         : 'Error inesperado al intentar iniciar sesión';

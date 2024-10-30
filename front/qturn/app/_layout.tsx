@@ -11,7 +11,6 @@ import { AuthProvider } from '@/authcontext';
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNavigation() {
-  // Movido dentro del componente que usa ThemeProvider
   const colorScheme = useColorScheme();
 
   return (

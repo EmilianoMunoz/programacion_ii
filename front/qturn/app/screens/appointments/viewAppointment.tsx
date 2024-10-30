@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
-import axios from 'axios';
+import { View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import apiClient from '@/services/apiClient';
 import * as SecureStore from 'expo-secure-store';
 import { router, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -44,12 +44,9 @@ const ViewAppointmentScreen: React.FC = () => {
       }
 
       try {
-        const response = await axios.get(
-          `http://192.168.18.166:8080/appointments/appointment/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await apiClient.get(`/appointments/appointment/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (response.data) {
           setAppointment(response.data);
